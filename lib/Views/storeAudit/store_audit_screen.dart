@@ -42,6 +42,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
   @override
   void initState() {
     super.initState();
+    print("sssssssssssssss${widget.channelId}");
     matchingChannel = GlobalMethods.getChannelById(widget.channelId, context);
     kpiList = GlobalMethods.getKpiList(
       widget.channelId,

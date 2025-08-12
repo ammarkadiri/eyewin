@@ -1,9 +1,9 @@
 class WatchoutUpload {
   final int categoryId;
   final int brandId;
-  final dynamic activityTypeId; // int or empty string
+  final dynamic activityTypeId;
   final int customerId;
-  final dynamic price; // double or empty string
+  final dynamic price;
   final String description;
   final int dataCollectorUserId;
   final String visitDate;

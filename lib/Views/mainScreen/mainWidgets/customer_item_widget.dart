@@ -47,6 +47,18 @@ class CustomerItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        final uploadDate = context
+            .read<MissionUploadDateProvider>()
+            .getUploadDateForCustomer(customer!.id ?? 0);
+        final dateToCheck = uploadDate ?? customer?.lastVisitDate;
+
+        print("upload date is $dateToCheck");
+        final todayDate = GlobalMethods.isToday(dateToCheck ?? DateTime.now());
+        print("is today $todayDate");
+        if (dateToCheck != null && todayDate) {
+          print('Already visited today');
+          return;
+        }
         context.pushNamed(
           Routes.storeAuditScreen,
           arguments: {

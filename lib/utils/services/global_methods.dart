@@ -47,6 +47,13 @@ class GlobalMethods {
     }
   }
 
+ static bool isToday(DateTime date) {
+    final now = DateTime.now();
+    return now.year == date.year &&
+        now.month == date.month &&
+        now.day == date.day;
+  }
+
   ///This method is visit date to upload mission tio server
   static String stringUploadDate() {
     final now = DateTime.now().toUtc();
@@ -437,7 +444,7 @@ class GlobalMethods {
     return result;
   }
 
- static double toDouble(String? value, {double defaultValue = 0.0}) {
+  static double toDouble(String? value, {double defaultValue = 0.0}) {
     if (value == null) return defaultValue;
     return double.tryParse(value) ?? defaultValue;
   }

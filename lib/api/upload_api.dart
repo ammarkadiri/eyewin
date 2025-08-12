@@ -57,6 +57,8 @@ class UploadApi {
       logJsonPart("Place", missionModel.place);
       logJsonPart("Promo", missionModel.promo);
 
+      logJsonPart("Promo", missionModel.photo);
+
       if (response.statusCode == 200) {
         if (response.body.trim().isEmpty) {
           print("Upload successful, but response body is empty.");
@@ -74,7 +76,7 @@ class UploadApi {
       }
     } catch (error) {
       print("Upload Error: $error");
-      rethrow;  
+      rethrow;
     }
   }
 }

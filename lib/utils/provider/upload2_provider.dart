@@ -1015,7 +1015,7 @@ class MissionUpload2Provider extends ChangeNotifier {
     debugPrint("---------");
     for (final product in mission.product) {
       debugPrint(
-        '➡️ product ID: ${product.id}, Available: ${product.available}, Is Competition: ${product.isCompetition}',
+        '➡️ product ID: ${product.id}, Available: ${product.available}, Is Competition: ${product.isCompetition}, Is name: ${product.skuName}',
       );
     }
 
