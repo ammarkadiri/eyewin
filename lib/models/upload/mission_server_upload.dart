@@ -1,12 +1,8 @@
-import 'package:flutter_salesman_module/models/place_model.dart';
-import 'package:flutter_salesman_module/models/price_model.dart';
-import 'package:flutter_salesman_module/models/product_must_model.dart';
-import 'package:flutter_salesman_module/models/promo_model.dart';
 import 'package:flutter_salesman_module/models/upload/generic_question_upload_model.dart';
-import 'package:flutter_salesman_module/models/upload/photo_upload_model.dart';
 import 'package:flutter_salesman_module/models/upload/watchOut_upload_model.dart';
+import 'package:image_picker/image_picker.dart';
 
-class MissionUploadDetails {
+class MissionUploadServerModel {
   final int customerId;
   final int dataCollectorUserId;
   final double? totalScore;
@@ -17,25 +13,21 @@ class MissionUploadDetails {
   final String? timeIn;
   final String? timeOut;
 
-  final List<PriceMustItem> price;
+  final List<PriceUpload> price;
   final String priceScore;
   final String priceScoreCompetition;
-  final bool showPrice;
 
-  List<PlaceMustItem> place;
+  List<PlaceUpload> place;
   final String placeScore;
   final String placeScoreCompetition;
-  final bool showPlace;
 
-  final List<PromoMustItem> promo;
+  final List<PromoUpload> promo;
   final String promoScore;
   final String promoScoreCompetition;
-  final bool showPromo;
 
-  List<ProductMustItem> product;
+  List<ProductUpload> product;
   final String productScore;
   final String? productScoreCompetition;
-  final bool showProduct;
 
   final List<PhotoUpload> photo;
   final List<WatchoutUpload> watchOut;
@@ -46,7 +38,7 @@ class MissionUploadDetails {
   final String? customerLatByDC;
   final String? customerPictureByDC;
 
-  MissionUploadDetails({
+  MissionUploadServerModel({
     required this.customerId,
     required this.dataCollectorUserId,
     this.totalScore,
@@ -59,19 +51,15 @@ class MissionUploadDetails {
     required this.price,
     required this.priceScore,
     required this.priceScoreCompetition,
-    this.showPrice = true,
     required this.place,
     required this.placeScore,
     required this.placeScoreCompetition,
-    this.showPlace = true,
     required this.promo,
     required this.promoScore,
     required this.promoScoreCompetition,
-    this.showPromo = true,
     required this.product,
     required this.productScore,
     this.productScoreCompetition,
-    this.showProduct = true,
     required this.photo,
     required this.watchOut,
     required this.genericQuestionsData,
@@ -81,8 +69,8 @@ class MissionUploadDetails {
     this.customerPictureByDC,
   });
 
-  factory MissionUploadDetails.fromJson(Map<String, dynamic> json) {
-    return MissionUploadDetails(
+  factory MissionUploadServerModel.fromJson(Map<String, dynamic> json) {
+    return MissionUploadServerModel(
       customerId: json['CustomerId'] ?? 0,
       dataCollectorUserId: json['DataCollectorUserId'] ?? 0,
       totalScore: (json['TotalScore'] as num?)?.toDouble(),
@@ -95,36 +83,32 @@ class MissionUploadDetails {
       timeOut: json['TimeOut'],
       price:
           (json['Price'] as List<dynamic>?)
-              ?.map((e) => PriceMustItem.fromJson(e))
+              ?.map((e) => PriceUpload.fromJson(e))
               .toList() ??
           [],
       priceScore: json['PriceScore'] ?? '',
       priceScoreCompetition: json['PriceScoreCompetition'] ?? '',
-      showPrice: json['ShowPrice'] ?? true,
       place:
           (json['Place'] as List<dynamic>?)
-              ?.map((e) => PlaceMustItem.fromJson(e))
+              ?.map((e) => PlaceUpload.fromJson(e))
               .toList() ??
           [],
       placeScore: json['PlaceScore'] ?? '',
       placeScoreCompetition: json['PlaceScoreCompetition'] ?? '',
-      showPlace: json['ShowPlace'] ?? true,
       promo:
           (json['Promo'] as List<dynamic>?)
-              ?.map((e) => PromoMustItem.fromJson(e))
+              ?.map((e) => PromoUpload.fromJson(e))
               .toList() ??
           [],
       promoScore: json['PromoScore'] ?? '',
       promoScoreCompetition: json['PromoScoreCompetition'] ?? '',
-      showPromo: json['ShowPromo'] ?? true,
       product:
           (json['Product'] as List<dynamic>?)
-              ?.map((e) => ProductMustItem.fromJson(e))
+              ?.map((e) => ProductUpload.fromJson(e))
               .toList() ??
           [],
       productScore: json['ProductScore'] ?? '',
       productScoreCompetition: json['productScoreCompetition'],
-      showProduct: json['ShowProduct'] ?? true,
       photo:
           (json['Photo'] as List<dynamic>?)
               ?.map((e) => PhotoUpload.fromJson(e))
@@ -161,19 +145,15 @@ class MissionUploadDetails {
       'Price': price.map((e) => e.toJson()).toList(),
       'PriceScore': priceScore,
       'PriceScoreCompetition': priceScoreCompetition,
-      'ShowPrice': showPrice,
       'Place': place.map((e) => e.toJson()).toList(),
       'PlaceScore': placeScore,
       'PlaceScoreCompetition': placeScoreCompetition,
-      'ShowPlace': showPlace,
       'Promo': promo.map((e) => e.toJson()).toList(),
       'PromoScore': promoScore,
       'PromoScoreCompetition': promoScoreCompetition,
-      'ShowPromo': showPromo,
       'Product': product.map((e) => e.toJson()).toList(),
       'ProductScore': productScore,
       'productScoreCompetition': productScoreCompetition,
-      'ShowProduct': showProduct,
       'Photo': photo.map((e) => e.toJson()).toList(),
       'WatchOut': watchOut.map((e) => e.toJson()).toList(),
       'GenericQuestionsData':
@@ -222,66 +202,165 @@ MissionUploadDetails(
   }
 }
 
-extension MissionUploadDetailsCopy on MissionUploadDetails {
-  MissionUploadDetails copyWith({
-    List<ProductMustItem>? product,
-    String? productScore,
-    String? productScoreCompetition,
-    List<PriceMustItem>? price,
-    String? priceScore,
-    String? priceScoreCompetition,
-    List<PlaceMustItem>? place,
-    String? placeScore,
-    String? placeScoreCompetition,
-    List<PromoMustItem>? promo,
-    String? promoScore,
-    String? promoScoreCompetition,
-    List<PhotoUpload>? photo,
-    List<WatchoutUpload>? watchOut,
-    List<GenericQuestionUpload>? genericQuestionsData,
-    String? timeIn,
-    String? timeOut,
-    double? totalScore,
-    double? totalScoreCompetition,
-    double? pointsEarned,
-    final String? customerNameByDC,
-    final String? customerLongByDC,
-    final String? customerLatByDC,
-    final String? customerPictureByDC,
-  }) {
-    return MissionUploadDetails(
-      customerId: customerId,
-      dataCollectorUserId: dataCollectorUserId,
-      totalScore: totalScore,
-      totalScoreCompetition: totalScoreCompetition,
-      visitDate: visitDate,
-      pointsEarned: pointsEarned,
-      visitMaxPoints: visitMaxPoints,
-      timeIn: timeIn ?? this.timeIn,
-      timeOut: timeOut ?? this.timeOut,
-      price: price ?? this.price,
-      priceScore: priceScore ?? this.priceScore,
-      priceScoreCompetition:
-          priceScoreCompetition ?? this.priceScoreCompetition,
-      place: place ?? this.place,
-      placeScore: placeScore ?? this.placeScore,
-      placeScoreCompetition:
-          placeScoreCompetition ?? this.placeScoreCompetition,
-      promo: promo ?? this.promo,
-      promoScore: promoScore ?? this.promoScore,
-      promoScoreCompetition:
-          promoScoreCompetition ?? this.promoScoreCompetition,
-      product: product ?? this.product,
-      productScore: productScore ?? this.productScore,
-      productScoreCompetition:
-          productScoreCompetition ?? this.productScoreCompetition,
-      photo: photo ?? this.photo,
-      watchOut: watchOut ?? this.watchOut,
-      genericQuestionsData: genericQuestionsData ?? this.genericQuestionsData,
-      customerNameByDC: customerNameByDC,
-      customerLatByDC: customerLatByDC,
-      customerLongByDC: customerLongByDC,
-      customerPictureByDC: customerPictureByDC,
+class ProductUpload {
+  int? skuId;
+  int? available;
+  int? dataCollectorUserId;
+  String? visitDate;
+
+  ProductUpload({
+    this.skuId,
+    this.available,
+    this.dataCollectorUserId,
+    this.visitDate,
+  });
+
+  factory ProductUpload.fromJson(Map<String, dynamic> json) => ProductUpload(
+    skuId: json['SKUID'],
+    available: json['Available'],
+    dataCollectorUserId: json['DataCollectorUserId'],
+    visitDate: json['visitDate'],
+  );
+
+  Map<String, dynamic> toJson() => {
+    'SKUID': skuId,
+    'Available': available,
+    'DataCollectorUserId': dataCollectorUserId,
+    'visitDate': visitDate,
+  };
+}
+
+class PriceUpload {
+  int? dataCollectorUserId;
+  int? skuId;
+  int? hasIssue;
+  String? visitDate;
+  String? Price;
+
+  PriceUpload({
+    this.dataCollectorUserId,
+    this.skuId,
+    this.hasIssue,
+    this.visitDate,
+    this.Price,
+  });
+
+  factory PriceUpload.fromJson(Map<String, dynamic> json) => PriceUpload(
+    dataCollectorUserId: json['DataCollectorUserId'],
+    skuId: json['SKUID'],
+    hasIssue: json['HasIssue'],
+    visitDate: json['visitDate'],
+    Price: json['Price'],
+  );
+
+  Map<String, dynamic> toJson() => {
+    'DataCollectorUserId': dataCollectorUserId,
+    'SKUID': skuId,
+    'HasIssue': hasIssue,
+    'visitDate': visitDate,
+    'Price': Price,
+  };
+}
+
+class PlaceUpload {
+  int? abidedBy;
+  int? guidelineId;
+  int? dataCollectorUserId;
+  String? visitDate;
+
+  PlaceUpload({
+    this.abidedBy,
+    this.guidelineId,
+    this.dataCollectorUserId,
+    this.visitDate,
+  });
+
+  factory PlaceUpload.fromJson(Map<String, dynamic> json) => PlaceUpload(
+    abidedBy: json['AbidedBy'],
+    guidelineId: json['GuidelineId'],
+    dataCollectorUserId: json['DataCollectorUserId'],
+    visitDate: json['visitDate'],
+  );
+
+  Map<String, dynamic> toJson() => {
+    'AbidedBy': abidedBy,
+    'GuidelineId': guidelineId,
+    'DataCollectorUserId': dataCollectorUserId,
+    'visitDate': visitDate,
+  };
+}
+
+class PromoUpload {
+  int? abidedBy;
+  int? guidelineId;
+  int? dataCollectorUserId;
+  String? visitDate;
+  PromoUpload({
+    this.abidedBy,
+    this.guidelineId,
+    this.dataCollectorUserId,
+    this.visitDate,
+  });
+
+  factory PromoUpload.fromJson(Map<String, dynamic> json) => PromoUpload(
+    abidedBy: json['AbidedBy'],
+    guidelineId: json['GuidelineId'],
+    dataCollectorUserId: json['DataCollectorUserId'],
+    visitDate: json['visitDate'],
+  );
+
+  Map<String, dynamic> toJson() => {
+    'AbidedBy': abidedBy,
+    'GuidelineId': guidelineId,
+    'DataCollectorUserId': dataCollectorUserId,
+    'visitDate': visitDate,
+  };
+}
+
+class PhotoUpload {
+  XFile? photo;
+  String? photoBase64; // Added for base64 storage
+  String? visitDate;
+  String? categoryId;
+  String? location;
+  String? dataCollectorUserId;
+  String? CustomerID;
+  String? ItemID;
+
+  PhotoUpload({
+    this.photo,
+    this.photoBase64,
+    this.visitDate,
+    this.categoryId,
+    this.location,
+    this.dataCollectorUserId,
+    this.CustomerID,
+    this.ItemID,
+  });
+
+  factory PhotoUpload.fromJson(Map<String, dynamic> json) {
+    return PhotoUpload(
+      photo: json['Photo'],
+      photoBase64: json['PhotoBase64'],
+      visitDate: json['VisitDate'],
+      categoryId: json['CategoryId'],
+      location: json['Location'],
+      dataCollectorUserId: json['DataCollectorUserId'],
+      CustomerID: json['CustomerID'],
+      ItemID: json['ItemID'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'Photo': photoBase64, // Send base64 as the main Photo field
+      'PhotoBase64': photoBase64,
+      'VisitDate': visitDate,
+      'CategoryId': categoryId,
+      'Location': location,
+      'DataCollectorUserId': dataCollectorUserId,
+      'CustomerID': CustomerID,
+      'ItemID': ItemID,
+    };
   }
 }

@@ -7,6 +7,7 @@ class MainKpiList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final kpiList = getKpiList(context);
     return SizedBox(
       height: 20,
       child: ListView.builder(

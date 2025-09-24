@@ -6,6 +6,7 @@ import 'package:flutter_salesman_module/components/custom_button.dart';
 import 'package:flutter_salesman_module/components/custom_filter_tab.dart';
 import 'package:flutter_salesman_module/components/custom_loader.dart'
     show GlobalLoader;
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/product_must_model.dart';
 import 'package:flutter_salesman_module/utils/constants/app_font_weight.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
@@ -72,6 +73,12 @@ class _PerfectGuidelineMainScreenState extends State<PerfectGuidelineMainScreen>
 
   @override
   Widget build(BuildContext context) {
+    filterTab = [
+      {"title": S.of(context).product, "id": 0},
+      {"title": S.of(context).price, "id": 1},
+      {"title": S.of(context).place, "id": 2},
+      {"title": S.of(context).promo, "id": 3},
+    ];
     final tabIndexProvider = Provider.of<TabIndexProvider>(context);
     final isLoading = context.watch<LoaderProvider>().isLoading;
 
@@ -91,7 +98,7 @@ class _PerfectGuidelineMainScreenState extends State<PerfectGuidelineMainScreen>
           body: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 15, right: 20),
+                padding: const EdgeInsets.only(left: 20, right: 20),
                 child: TopBarGuideline(),
               ),
               const SizedBox(height: 10),
@@ -105,7 +112,7 @@ class _PerfectGuidelineMainScreenState extends State<PerfectGuidelineMainScreen>
                   showShadow: true,
                   child: Center(
                     child: Text(
-                      'Document Guidelines',
+                      S.of(context).documents,
                       style: TextStyle(
                         fontSize: 11,
                         color: AppColors.filterGreyColor,

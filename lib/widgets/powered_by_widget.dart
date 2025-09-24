@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/utils/constants/app_assets.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
 
@@ -13,7 +14,7 @@ class PoweredByWidget extends StatelessWidget {
         color: AppColors.lightGreyColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
             offset: Offset(0, -4),
             blurRadius: 6,
             spreadRadius: 1,
@@ -25,11 +26,16 @@ class PoweredByWidget extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Version 3.20', style: TextStyle(fontSize: 9)),
+            Row(
+              children: [
+                SizedBox(width: 10),
+                Text('Version 3.20', style: TextStyle(fontSize: 9)),
+              ],
+            ),
             Row(
               children: [
                 Text(
-                  'Powered by',
+                  S.of(context).powered_by,
                   textAlign: TextAlign.start,
                   style: TextStyle(fontSize: 9),
                 ),
@@ -39,6 +45,7 @@ class PoweredByWidget extends StatelessWidget {
                   width: 50,
                   height: 15,
                 ),
+                SizedBox(width: 10),
               ],
             ),
           ],

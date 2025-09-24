@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/models/guidline_model.dart';
 import 'package:flutter_salesman_module/models/place_model.dart';
@@ -7,14 +10,24 @@ import 'package:flutter_salesman_module/models/promo_model.dart';
 import 'package:flutter_salesman_module/models/upload/mission_upload_model.dart';
 import 'package:flutter_salesman_module/models/upload/photo_upload_model.dart';
 import 'package:flutter_salesman_module/utils/enum/price_select_type.dart';
+import 'package:flutter_salesman_module/utils/services/global_methods.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:image_picker/image_picker.dart';
 
 final box = GetStorage();
 
 class MissionUpload2Provider extends ChangeNotifier {
   final Map<String, MissionUploadDetails> _missions = {};
+  final Set<String> _notAvailableItems = {};
 
   String _key(int customerId, int userId) => '$customerId-$userId';
+  String _notAvailableKey(
+    int customerId,
+    int userId,
+    int categoryId,
+    String group,
+  ) => '$customerId-$userId-$categoryId-$group';
+
   MissionUploadDetails? getMission(int customerId, int userId) {
     return _missions[_key(customerId, userId)];
   }
@@ -25,14 +38,10 @@ class MissionUpload2Provider extends ChangeNotifier {
           _missions.values.map((mission) => mission.toJson()).toList();
 
       await box.write('missions', jsonList);
-      debugPrint('✅ Missions saved to storage.');
 
-      // Print all missions after saving
+      debugPrint('💾 Saved ${jsonList.length} missions to storage');
       for (var mission in _missions.values) {
-        printMissionDetails(
-          customerId: mission.customerId,
-          userId: mission.dataCollectorUserId,
-        );
+        debugPrint('✅ Mission saved: ${mission.toJson()}');
       }
     } catch (e) {
       debugPrint('❌ Error saving missions: $e');
@@ -54,32 +63,76 @@ class MissionUpload2Provider extends ChangeNotifier {
         final key = _key(mission.customerId, mission.dataCollectorUserId);
         _missions[key] = mission;
 
-        // Print details after adding each mission
-        printMissionDetails(
-          customerId: mission.customerId,
-          userId: mission.dataCollectorUserId,
-        );
+        // 👇 Print each mission details
+        debugPrint('✅ Loaded mission: ${mission.toJson()}');
       }
 
-      debugPrint('✅ Loaded ${_missions.length} missions from storage.');
-
+      debugPrint('📦 Total missions loaded: ${_missions.length}');
       notifyListeners();
     } catch (e) {
       debugPrint('❌ Error loading missions: $e');
     }
   }
 
-  void initializeMission({
+  Future<void> clearAllMissions() async {
+    try {
+      _missions.clear();
+      _notAvailableItems.clear();
+
+      await box.remove('missions');
+
+      debugPrint("✅ All missions cleared from memory and local storage.");
+
+      // Notify listeners
+      notifyListeners();
+    } catch (e) {
+      debugPrint("❌ Error clearing all missions: $e");
+    }
+  }
+
+  Future<void> clearMission({
     required int customerId,
     required int userId,
-    required String visitDate,
-  }) {
+  }) async {
+    final key = _key(customerId, userId);
+
+    if (_missions.containsKey(key)) {
+      _missions.remove(key);
+
+      await saveMissionsToStorage();
+
+      notifyListeners();
+    } else {
+      debugPrint(
+        '⚠️ No mission found to clear for customerId: $customerId, userId: $userId',
+      );
+    }
+  }
+
+  Future<void> initializeMission({
+    required int customerId,
+    required int userId,
+
+    String? customerNameByDC,
+    String? visitDate,
+    String? customerLongByDC,
+    String? customerLatByDC,
+    String? customerPictureByDC,
+    bool? showProduct,
+    bool? showPromo,
+    bool? showPlace,
+    bool? showPrice,
+  }) async {
     final key = _key(customerId, userId);
 
     final mission = MissionUploadDetails(
       customerId: customerId,
       dataCollectorUserId: userId,
-      visitDate: visitDate,
+      showPlace: showPlace ?? false,
+      showPrice: showPrice ?? false,
+      showProduct: showProduct ?? false,
+      showPromo: showPromo ?? false,
+      visitDate: '',
       price: [],
       priceScore: '',
       priceScoreCompetition: '',
@@ -103,13 +156,14 @@ class MissionUpload2Provider extends ChangeNotifier {
       totalScoreCompetition: null,
       pointsEarned: null,
       visitMaxPoints: null,
-      customerNameByDC: null,
-      customerLongByDC: null,
-      customerLatByDC: null,
-      customerPictureByDC: null,
+      customerNameByDC: customerNameByDC,
+      customerLongByDC: customerLongByDC,
+      customerLatByDC: customerLatByDC,
+      customerPictureByDC: customerPictureByDC,
     );
 
     _missions[key] = mission;
+    await saveMissionsToStorage();
     notifyListeners();
   }
 
@@ -146,6 +200,7 @@ class MissionUpload2Provider extends ChangeNotifier {
 
     final products = mission.product;
 
+    String visitDate = GlobalMethods.stringDate();
     final groupProducts =
         products.where((p) => groupProductIds.contains(p.id)).toList();
 
@@ -159,7 +214,10 @@ class MissionUpload2Provider extends ChangeNotifier {
             if (groupProductIds.contains(product.id)) {
               final newAvailable = (product.id == productId) ? 0 : 1;
 
-              return product.copyWith(available: newAvailable);
+              return product.copyWith(
+                available: newAvailable,
+                visitDate: visitDate,
+              );
             }
             return product;
           }).toList();
@@ -170,7 +228,10 @@ class MissionUpload2Provider extends ChangeNotifier {
               final current = product.available ?? 0;
               final newAvailable = current == 1 ? 0 : 1;
 
-              return product.copyWith(available: newAvailable);
+              return product.copyWith(
+                available: newAvailable,
+                visitDate: visitDate,
+              );
             }
             return product;
           }).toList();
@@ -303,7 +364,7 @@ class MissionUpload2Provider extends ChangeNotifier {
     required int userId,
     required int productId,
     required PriceMustItem priceItem,
-    required SelectionType selection,
+    SelectionType? selection,
     double? price,
   }) async {
     final key = _key(customerId, userId);
@@ -315,12 +376,15 @@ class MissionUpload2Provider extends ChangeNotifier {
 
     final prices = mission.price;
 
-    final hasIssueValue = (selection == SelectionType.correct) ? 0 : 1;
+    final int? hasIssueValue =
+        selection == null ? null : (selection == SelectionType.correct ? 0 : 1);
 
+    String visitDate = GlobalMethods.stringDate();
     final updatedPriceItem = priceItem.copyWith(
       hasIssue: hasIssueValue,
       dataCollectorUserId: userId,
       price: price,
+      visitDate: visitDate,
     );
 
     final index = prices.indexWhere((p) => p.id == productId);
@@ -429,9 +493,6 @@ class MissionUpload2Provider extends ChangeNotifier {
       priceScore: nonCompPercentage.toStringAsFixed(2),
       priceScoreCompetition: compPercentage.toStringAsFixed(2),
     );
-    for (var p in mission.price) {
-      print("sssssssssssssssssssssssssssssss${p.hasIssue}");
-    }
     notifyListeners();
   }
 
@@ -475,16 +536,22 @@ class MissionUpload2Provider extends ChangeNotifier {
       return;
     }
 
+    String visitDate = GlobalMethods.stringDate();
+
     for (var place in mission.place) {
       if (place.groupId == groupId) {
-        for (var guideline in place.guidelines!) {
-          if (guideline != null && guideline.id == guidelineId) {
-            guideline.abidedBy = selection == SelectionType.correct ? 1 : 0;
-            guideline.dataCollectorUserId = userId;
+        for (var guideline in place.guidelines ?? []) {
+          if (guideline != null) {
+            if (guideline.id == guidelineId) {
+              guideline.abidedBy = selection == SelectionType.correct ? 1 : 0;
+              guideline.dataCollectorUserId = userId;
+              guideline.visitDate = visitDate;
+            }
           }
         }
       }
     }
+
     updatePlaceScores(customerId: customerId, userId: userId);
     notifyListeners();
     await saveMissionsToStorage();
@@ -552,9 +619,6 @@ class MissionUpload2Provider extends ChangeNotifier {
     final mission = _missions[key];
 
     if (mission == null) {
-      debugPrint(
-        '❌ No mission found for customerId: $customerId, userId: $userId',
-      );
       return;
     }
 
@@ -565,10 +629,6 @@ class MissionUpload2Provider extends ChangeNotifier {
     int competitionCorrectCount = 0;
 
     for (var place in mission.place) {
-      debugPrint(
-        '🟡 Place: ${place.channelName} isCompetition: ${place.isCompetition}',
-      );
-
       for (var guideline in place.guidelines!) {
         if (place.isCompetition == false) {
           // Non-competition guidelines
@@ -596,20 +656,6 @@ class MissionUpload2Provider extends ChangeNotifier {
     if (competitionCount > 0) {
       compPercentage = (competitionCorrectCount / competitionCount) * 100;
     }
-
-    debugPrint('🟡 Total non-competition guidelines: $nonCompetitionCount');
-    debugPrint(
-      '✅ Correct non-competition guidelines: $nonCompetitionCorrectCount',
-    );
-    debugPrint(
-      '📊 Non-competition correct percentage: ${nonCompPercentage.toStringAsFixed(2)}%',
-    );
-
-    debugPrint('🟡 Total competition guidelines: $competitionCount');
-    debugPrint('✅ Correct competition guidelines: $competitionCorrectCount');
-    debugPrint(
-      '📊 Competition correct percentage: ${compPercentage.toStringAsFixed(2)}%',
-    );
 
     _missions[key] = mission.copyWith(
       placeScore: nonCompPercentage.toStringAsFixed(2),
@@ -646,28 +692,22 @@ class MissionUpload2Provider extends ChangeNotifier {
     final mission = _missions[key];
 
     if (mission == null) {
-      debugPrint(
-        '❌ Mission not found for customerId: $customerId, userId: $userId',
-      );
       return;
     }
 
+    String visitDate = GlobalMethods.stringDate();
     for (var promo in mission.promo) {
       if (promo.groupId == groupId) {
         for (var guideline in promo.guidelines!) {
           if (guideline.id == guidelineId) {
             guideline.abidedBy = selection == SelectionType.correct ? 1 : 0;
             guideline.dataCollectorUserId = userId;
+            guideline.visitDate = visitDate;
           }
         }
       }
     }
-    debugPrint(
-      '📥 selectPromoGuideline called with: '
-      'customerId: $customerId, userId: $userId, '
-      'groupId: $groupId, guidelineId: $guidelineId, '
-      'selection: $selection',
-    );
+
     updatePromoScores(customerId: customerId, userId: userId);
     notifyListeners();
     await saveMissionsToStorage();
@@ -701,9 +741,6 @@ class MissionUpload2Provider extends ChangeNotifier {
     final mission = _missions[key];
 
     if (mission == null) {
-      debugPrint(
-        '❌ No mission found for customerId: $customerId, userId: $userId',
-      );
       return;
     }
 
@@ -740,20 +777,6 @@ class MissionUpload2Provider extends ChangeNotifier {
       compPercentage = (competitionCorrectCount / competitionCount) * 100;
     }
 
-    debugPrint('🟡 Total non-competition guidelines: $nonCompetitionCount');
-    debugPrint(
-      '✅ Correct non-competition guidelines: $nonCompetitionCorrectCount',
-    );
-    debugPrint(
-      '📊 Non-competition correct percentage: ${nonCompPercentage.toStringAsFixed(2)}%',
-    );
-
-    debugPrint('🟡 Total competition guidelines: $competitionCount');
-    debugPrint('✅ Correct competition guidelines: $competitionCorrectCount');
-    debugPrint(
-      '📊 Competition correct percentage: ${compPercentage.toStringAsFixed(2)}%',
-    );
-
     _missions[key] = mission.copyWith(
       promoScore: nonCompPercentage.toStringAsFixed(2),
       promoScoreCompetition: compPercentage.toStringAsFixed(2),
@@ -771,34 +794,22 @@ class MissionUpload2Provider extends ChangeNotifier {
     final key = _key(customerId, userId);
     final mission = _missions[key];
 
-    print('🔍 Getting promo selection for:');
-    print('Customer ID: $customerId, User ID: $userId');
-    print('Group ID: $groupId, Guideline ID: $guidelineId');
-    print('Generated key: $key');
-    print('Mission found: ${mission != null}');
-
     if (mission == null) return null;
 
     final promos = mission.promo;
-    print('Total promo groups: ${mission.promo}');
 
     for (var promo in promos) {
-      print('Checking promo with groupId: ${promo.groupId}');
       if (promo.groupId == groupId) {
         final guidelines = promo.guidelines;
-        print('Promo group matched. Guidelines: ${guidelines?.length ?? 0}');
         if (guidelines == null) continue;
 
         for (var guideline in guidelines) {
-          print('Checking guideline with id: ${guideline.id}');
           if (guideline.id == guidelineId) {
-            print('✅ Guideline matched. abidedBy: ${guideline.abidedBy}');
             if (guideline.abidedBy == 1) {
               return SelectionType.correct;
             } else if (guideline.abidedBy == 0) {
               return SelectionType.incorrect;
             } else {
-              print('⚠️ abidedBy is neither 0 nor 1');
               return null;
             }
           }
@@ -806,7 +817,6 @@ class MissionUpload2Provider extends ChangeNotifier {
       }
     }
 
-    print('❌ Guideline not found in any matching promo group.');
     return null;
   }
 
@@ -817,38 +827,46 @@ class MissionUpload2Provider extends ChangeNotifier {
     required int userId,
     required int categoryId,
     required String group,
-    required String imagePath,
-    required String visitDate,
+    required XFile imagePath,
     required int dataCollectorUserId,
+    required int itemId,
   }) async {
     final key = _key(customerId, userId);
     final mission = _missions[key];
 
     if (mission == null) {
-      debugPrint('❌ Mission not found for $customerId - $userId');
       return;
     }
 
+    String? base64String;
+    try {
+      final file = File(imagePath.path);
+      final exists = await file.exists();
+
+      if (!exists) {
+        base64String = null;
+      } else {
+        final bytes = await file.readAsBytes();
+        base64String = base64Encode(bytes);
+      }
+    } catch (e) {
+      debugPrint('❌ Error converting image to base64: $e');
+      base64String = null;
+    }
+
+    String visitDate = GlobalMethods.stringDate();
     final photo = PhotoUpload(
       categoryId: categoryId,
       dataCollectorUserId: dataCollectorUserId,
       location: group,
       photo: imagePath,
+      photoBase64: base64String,
       visitDate: visitDate,
     );
-
     final updatedPhotos = List<PhotoUpload>.from(mission.photo);
     updatedPhotos.add(photo);
 
     _missions[key] = mission.copyWith(photo: updatedPhotos);
-
-    debugPrint('📷 Added Image: $imagePath');
-    debugPrint('🧾 Current Image List for mission:');
-    for (var img in updatedPhotos) {
-      debugPrint(
-        '➡️ categoryId: ${img.categoryId} | group: ${img.location} | image: ${img.photo}',
-      );
-    }
 
     notifyListeners();
     await saveMissionsToStorage();
@@ -881,12 +899,70 @@ class MissionUpload2Provider extends ChangeNotifier {
         .toList();
   }
 
+  void toggleNotAvailable({
+    required int customerId,
+    required int userId,
+    required int categoryId,
+    required String group,
+  }) {
+    final notAvailableKey = _notAvailableKey(
+      customerId,
+      userId,
+      categoryId,
+      group,
+    );
+
+    if (_notAvailableItems.contains(notAvailableKey)) {
+      _notAvailableItems.remove(notAvailableKey);
+    } else {
+      _notAvailableItems.add(notAvailableKey);
+    }
+
+    notifyListeners();
+  }
+
+  bool isNotAvailableForCategory({
+    required int customerId,
+    required int userId,
+    required int categoryId,
+    required String group,
+  }) {
+    final notAvailableKey = _notAvailableKey(
+      customerId,
+      userId,
+      categoryId,
+      group,
+    );
+    return _notAvailableItems.contains(notAvailableKey);
+  }
+
+  List<Map<String, dynamic>> getNotAvailableItems({
+    required int customerId,
+    required int userId,
+  }) {
+    final items =
+        _notAvailableItems
+            .where((key) => key.startsWith('$customerId-$userId-'))
+            .map((key) {
+              final parts = key.split('-');
+              return {
+                'categoryId': int.tryParse(parts[2]),
+                'group': parts
+                    .sublist(3)
+                    .join('-'), // in case group has hyphens
+              };
+            })
+            .toList();
+
+    return items;
+  }
+
   Future<void> removeImage({
     required int customerId,
     required int userId,
     required int categoryId,
     required String group,
-    required String imagePath,
+    required XFile imagePath,
   }) async {
     final key = _key(customerId, userId);
     final mission = _missions[key];
@@ -902,9 +978,6 @@ class MissionUpload2Provider extends ChangeNotifier {
 
     _missions[key] = mission.copyWith(photo: updatedPhotos);
 
-    debugPrint(
-      '🗑️ Removed image: $imagePath for category $categoryId and group "$group"',
-    );
     notifyListeners();
     await saveMissionsToStorage();
   }
@@ -973,128 +1046,5 @@ class MissionUpload2Provider extends ChangeNotifier {
     );
 
     notifyListeners();
-  }
-
-  void printMissionDetails({required int customerId, required int userId}) {
-    final mission = getMission(customerId, userId);
-    if (mission == null) {
-      debugPrint(
-        '❌ No mission found for customer $customerId and user $userId.',
-      );
-      return;
-    }
-
-    debugPrint(
-      '************************** customerId: $customerId **************************** userId: $userId ********************',
-    );
-    debugPrint("---------");
-    debugPrint('dataCollectorUserId: ${mission.dataCollectorUserId}');
-    debugPrint("---------");
-    debugPrint('totalScore: ${mission.totalScore}');
-    debugPrint("---------");
-    debugPrint('totalScoreCompetition: ${mission.totalScoreCompetition}');
-    debugPrint("---------");
-    debugPrint('visitDate: ${mission.visitDate}');
-    debugPrint("---------");
-    debugPrint('pointsEarned: ${mission.pointsEarned}');
-    debugPrint("---------");
-    debugPrint('visitMaxPoints: ${mission.visitMaxPoints}');
-    debugPrint("---------");
-    debugPrint('timeIn: ${mission.timeIn}');
-    debugPrint("---------");
-    debugPrint('timeOut: ${mission.timeOut}');
-    debugPrint(
-      '*******************************************************************',
-    );
-
-    debugPrint('Products:');
-    debugPrint("---------");
-    debugPrint('productScore: ${mission.productScore}');
-    debugPrint("---------");
-    debugPrint('productScoreCompetition: ${mission.productScoreCompetition}');
-    debugPrint("---------");
-    for (final product in mission.product) {
-      debugPrint(
-        '➡️ product ID: ${product.id}, Available: ${product.available}, Is Competition: ${product.isCompetition}, Is name: ${product.skuName}',
-      );
-    }
-
-    debugPrint(
-      '*******************************************************************',
-    );
-    debugPrint('Prices:');
-    debugPrint("---------");
-    debugPrint('priceScore: ${mission.priceScore}');
-    debugPrint("---------");
-    debugPrint('priceScoreCompetition: ${mission.priceScoreCompetition}');
-    debugPrint("---------");
-    for (final price in mission.price) {
-      debugPrint(
-        '➡️ Price ID: ${price.id}, DataCollectorUserId: ${price.dataCollectorUserId}, Has Issue: ${price.hasIssue}, Is Competition: ${price.isCompetition} --- Price: ${price.price}',
-      );
-    }
-
-    debugPrint(
-      '*******************************************************************',
-    );
-    debugPrint('Places:');
-    debugPrint("---------");
-    debugPrint('placeScore: ${mission.placeScore}');
-    debugPrint("---------");
-    debugPrint('placeScoreCompetition: ${mission.placeScoreCompetition}');
-    debugPrint("---------");
-    for (final place in mission.place) {
-      if (place.guidelines == null || place.guidelines!.isEmpty) {
-        debugPrint('No guidelines in place: ${place.name}');
-        continue;
-      }
-      debugPrint(
-        '➡️ place ID: ${place.groupId}, place: ${place.channelName}, AbidedBy: ${place.guidelines!.length}',
-      );
-      for (var guideline in place.guidelines!) {
-        debugPrint(
-          '➡️ place guideline ID: ${guideline!.id}, DataCollectorUserId: ${guideline.dataCollectorUserId}, AbidedBy: ${guideline.abidedBy}',
-        );
-      }
-    }
-
-    debugPrint(
-      '*******************************************************************',
-    );
-    debugPrint('Promo:');
-    debugPrint("---------");
-    debugPrint('promoScore: ${mission.promoScore}');
-    debugPrint("---------");
-    debugPrint('promoScoreCompetition: ${mission.promoScoreCompetition}');
-    debugPrint("---------");
-    for (final promo in mission.promo) {
-      if (promo.guidelines == null || promo.guidelines!.isEmpty) {
-        debugPrint('No guidelines in promo: ${promo.name}');
-        continue;
-      }
-      debugPrint(
-        '➡️ promo ID: ${promo.groupId}, promo: ${promo.categoryName}, AbidedBy: ${promo.guidelines!.length}',
-      );
-      for (var guideline in promo.guidelines!) {
-        debugPrint(
-          '➡️ promo guideline ID: ${guideline.id}, DataCollectorUserId: ${guideline.dataCollectorUserId}, AbidedBy: ${guideline.abidedBy}',
-        );
-      }
-    }
-
-    debugPrint(
-      '*******************************************************************',
-    );
-    debugPrint('Photos:');
-    debugPrint("---------");
-    for (final photo in mission.photo) {
-      debugPrint(
-        '🖼️ photoPath: ${photo.photo}, categoryId: ${photo.categoryId}, location(group): ${photo.location}',
-      );
-    }
-
-    debugPrint(
-      '*******************************************************************',
-    );
   }
 }

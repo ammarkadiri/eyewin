@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_salesman_module/utils/constants/colors.dart';
 
 class CustomContainer extends StatelessWidget {
   final double? width;
   final double? height;
   final Color backgroundColor;
-  final List<Color>? gradient; 
+  final List<Color>? gradient;
   final double borderRadius;
   final List<BoxShadow>? boxShadow;
   final EdgeInsetsGeometry? padding;
@@ -15,7 +14,7 @@ class CustomContainer extends StatelessWidget {
   final VoidCallback? onTap;
   final bool showShadow;
   const CustomContainer({
-    Key? key,
+    super.key,
     this.width,
     this.height,
     this.backgroundColor = Colors.white,
@@ -28,7 +27,7 @@ class CustomContainer extends StatelessWidget {
     this.border,
     this.onTap,
     this.showShadow = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +48,7 @@ class CustomContainer extends StatelessWidget {
               showShadow
                   ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 6,
                       spreadRadius: 1,
                       offset: Offset(0, 0),

@@ -59,63 +59,56 @@ class GuidelineItem extends StatelessWidget {
             : currentIndex == 1
             ? (groupedPriceList?.channelId ?? [])
             : (groupedGuidelineList?.channelId ?? []);
-    print(
-      "groupedGuidelineList?.description${groupedGuidelineList?.description}",
-    );
 
     return SizedBox(
       height: 100,
-      child: Container(
-        child: Row(
-          children: [
-            // Left image and name container
-            Container(
-              width: productWidth,
-              padding: const EdgeInsets.all(0),
-              decoration: const BoxDecoration(color: Colors.transparent),
-              child: Row(
-                children: [
-                  if (imageUrl.isNotEmpty) buildImage(imageUrl),
-                  buildName(name),
-                  if (tabIndex.currentIndex > 1 &&
-                      groupedGuidelineList!.isCompetition!)
-                    Column(
-                      children: [
-                        
-                        Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: CustomAssetImage(
-                            imagePath: AppAssets.competitionImage,
-                            color: AppColors.primaryBlack,
-                            width: 20,
-                            height: 20,
-                          ),
+      child: Row(
+        children: [
+          Container(
+            width: productWidth,
+            padding: const EdgeInsets.all(0),
+            decoration: const BoxDecoration(color: Colors.transparent),
+            child: Row(
+              children: [
+                if (imageUrl.isNotEmpty) buildImage(imageUrl),
+                buildName(name),
+                if (tabIndex.currentIndex > 1 &&
+                    groupedGuidelineList!.isCompetition!)
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(5.0),
+                        child: CustomAssetImage(
+                          imagePath: AppAssets.competitionImage,
+                          color: AppColors.primaryBlack,
+                          width: 20,
+                          height: 20,
                         ),
-                      ],
-                    ),
-                ],
-              ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
+          ),
 
-            // Vertical Divider
-            Container(width: 1, color: AppColors.dividerColor),
+          // Vertical Divider
+          Container(width: 1, color: AppColors.dividerColor),
 
-            // Cluster Grid
-            ClustItem(
-              clusterCount: clusterCount,
-              item: groupedProductList,
-              index: index,
-              productWidth: productWidth,
-              rowControllers: rowControllers,
-              productChannelId: channelId,
-              checkRangeByChannel: groupedPriceList?.checkRangeByChannel ?? {},
-              collectPriceByChannel:
-                  groupedPriceList?.collectPriceByChannel ?? {},
-              maxPricesByChannel: groupedPriceList?.maxPricesByChannel ?? {},
-              minPricesByChannel: groupedPriceList?.minPricesByChannel ?? {},
-            ),
-          ],
-        ),
+          // Cluster Grid
+          ClustItem(
+            clusterCount: clusterCount,
+            item: groupedProductList,
+            index: index,
+            productWidth: productWidth,
+            rowControllers: rowControllers,
+            productChannelId: channelId,
+            checkRangeByChannel: groupedPriceList?.checkRangeByChannel ?? {},
+            collectPriceByChannel:
+                groupedPriceList?.collectPriceByChannel ?? {},
+            maxPricesByChannel: groupedPriceList?.maxPricesByChannel ?? {},
+            minPricesByChannel: groupedPriceList?.minPricesByChannel ?? {},
+          ),
+        ],
       ),
     );
   }

@@ -22,7 +22,7 @@ Future<T?> customBottomSheet<T>(
   List<PriceMustItem?>? priceItems,
 }) {
   final screenHeight = MediaQuery.of(context).size.height;
-  final GlobalKey _contentKey = GlobalKey();
+  final GlobalKey contentKey = GlobalKey();
   final ScrollController scrollController = ScrollController();
   final TextEditingController shelfPriceController = TextEditingController();
   final FocusNode shelfPriceFocusNode = FocusNode();
@@ -41,7 +41,7 @@ Future<T?> customBottomSheet<T>(
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             shelfPriceFocusNode.requestFocus();
             final RenderBox? box =
-                _contentKey.currentContext?.findRenderObject() as RenderBox?;
+                contentKey.currentContext?.findRenderObject() as RenderBox?;
             final double contentHeight = box?.size.height ?? 0;
 
             if (contentHeight > maxHeight && scrollController.hasClients) {
@@ -74,7 +74,7 @@ Future<T?> customBottomSheet<T>(
                     child: SingleChildScrollView(
                       controller: scrollController,
                       child: SizedBox(
-                        key: _contentKey,
+                        key: contentKey,
                         width: MediaQuery.of(context).size.width,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -267,7 +267,7 @@ Future<T?> customBottomSheet<T>(
                                         selectionProvider.selectPrice(
                                           customerId: customerId,
                                           userId: user!.userId ?? 0,
-                                          selection: type!,
+                                          selection: type,
                                           priceItem: priceList,
                                           price: enteredPrice,
 

@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart'; 
-import 'package:flutter_salesman_module/utils/provider/upload2_provider.dart'; 
+import 'package:flutter/material.dart';
+import 'package:flutter_salesman_module/models/upload/mission_server_upload.dart';
+import 'package:flutter_salesman_module/utils/provider/get_mission_upload.dart';
+import 'package:flutter_salesman_module/utils/provider/upload2_provider.dart';
 import 'package:provider/provider.dart';
 
 /*void completeMissionClicked() {
@@ -144,138 +146,112 @@ void completeMissionPress(BuildContext context, int customerId, int userId) {
     context,
     listen: false,
   );
+
+  final missionServerProvider = Provider.of<MissionUploadServerProvider>(
+    context,
+    listen: false,
+  );
   missionProvider.setTotalScoresAndTimeOut(
     customerId: customerId,
     userId: userId,
   );
 
-  //missionProvider.setTotalScoresAndTimeOut(customerId);
+  List<PlaceUpload> place = [];
 
-  /* final mission = missionProvider.getMission(customerId);
-  if (kpiList.isEmpty) return;
-
-  final hasKpiId1 = kpiList.any((kpi) => kpi.kpiId == '1');
-  final hasKpiId2 = kpiList.any((kpi) => kpi.kpiId == '2');
-  final hasKpiId3 = kpiList.any((kpi) => kpi.kpiId == '3');
-  final hasKpiId4 = kpiList.any((kpi) => kpi.kpiId == '4');
-
-  double? productScore,
-      priceScore,
-      placeScore,
-      promoScore,
-      kpiCount = 0,
-      kpiCountCompetition = 0,
-      priceScoreCompetition,
-      placeScoreCompetition,
-      totalScore,
-      totalScoreCompitition,
-      promoScoreCompetition;
-
-  double? productScoreCompetition;
-
-  /// Product (kpiId = 1)
-  if (hasKpiId1 && mission != null) {
-    final ps = mission.productScore;
-    if (ps.isNotEmpty) {
-      productScore = double.tryParse(ps) ?? 0;
-      kpiCount++;
-    } else {
-      productScore = null;
+  List<PromoUpload> promo = [];
+  final mission = missionProvider.getMission(customerId, userId);
+  for (var places in mission!.place) {
+    for (var guidline in places.guidelines!) {
+      place.add(
+        PlaceUpload(
+          abidedBy: guidline!.abidedBy,
+          dataCollectorUserId: userId,
+          guidelineId: guidline.guidelineId,
+          visitDate: guidline.visitDate,
+        ),
+      );
     }
-
-    final psc = mission.productScoreCompetition;
-    if (psc != null && psc.isNotEmpty) {
-      productScoreCompetition = double.tryParse(psc);
-      kpiCountCompetition++;
-    } else {
-      productScoreCompetition = null;
-    }
-  } else {
-    productScore = null;
-    productScoreCompetition = null;
   }
-
-  /// Price (kpiId = 2)
-  if (hasKpiId2 && mission != null) {
-    final ps = mission.priceScore;
-    if (ps.isNotEmpty) {
-      priceScore = double.tryParse(ps) ?? 0;
-      kpiCount++;
-    } else {
-      priceScore = null;
+  for (var promos in mission.promo) {
+    for (var guidline in promos.guidelines!) {
+      promo.add(
+        PromoUpload(
+          abidedBy: guidline.abidedBy,
+          dataCollectorUserId: userId,
+          guidelineId: guidline.guidelineId,
+          visitDate: guidline.visitDate,
+        ),
+      );
     }
-
-    final psc = mission.priceScoreCompetition;
-    if (psc.isNotEmpty) {
-      priceScoreCompetition = double.tryParse(psc);
-      kpiCountCompetition++;
-    } else {
-      priceScoreCompetition = null;
-    }
-  } else {
-    priceScore = null;
-    priceScoreCompetition = null;
   }
+  final price =
+      mission.price
+          .map(
+            (p) => PriceUpload(
+              dataCollectorUserId: p.dataCollectorUserId,
+              hasIssue: p.hasIssue,
+              skuId: p.skuId,
+              visitDate: p.visitDate,
+              Price: p.price.toString(),
+            ),
+          )
+          .toList();
 
-  /// Place (kpiId = 3)
-  if (hasKpiId3 && mission != null) {
-    final ps = mission.placeScore;
-    if (ps.isNotEmpty) {
-      placeScore = double.tryParse(ps) ?? 0;
-      kpiCount++;
-    } else {
-      placeScore = null;
-    }
+  final product =
+      mission.product
+          .map(
+            (p) => ProductUpload(
+              dataCollectorUserId: userId,
+              available: p.available,
+              skuId: p.skuId,
+              visitDate: p.visitDate,
+            ),
+          )
+          .toList();
+  final photo =
+      mission.photo
+          .map(
+            (p) => PhotoUpload(
+              dataCollectorUserId: userId.toString(),
+              categoryId: p.categoryId.toString(),
+              photo: p.photo,
+              photoBase64: p.photoBase64, // Include base64 data
+              visitDate: p.visitDate,
+              location: p.location,
+            ),
+          )
+          .toList();
 
-    final psc = mission.placeScoreCompetition;
-    if (psc.isNotEmpty) {
-      placeScoreCompetition = double.tryParse(psc);
-      kpiCountCompetition++;
-    } else {
-      placeScoreCompetition = null;
-    }
-  } else {
-    placeScore = null;
-    placeScoreCompetition = null;
-  }
-
-  /// Promo (kpiId = 4)
-  if (hasKpiId4 && mission != null) {
-    final ps = mission.promoScore;
-    if (ps.isNotEmpty) {
-      promoScore = double.tryParse(ps) ?? 0;
-      kpiCount++;
-    } else {
-      promoScore = null;
-    }
-
-    final psc = mission.promoScoreCompetition;
-    if (psc.isNotEmpty) {
-      promoScoreCompetition = double.tryParse(psc);
-      kpiCountCompetition++;
-    } else {
-      promoScoreCompetition = null;
-    }
-  } else {
-    promoScore = null;
-    promoScoreCompetition = null;
-  }
-
-  if (kpiCount > 0) {
-    totalScore =
-        (productScore ?? 0) +
-        (priceScore ?? 0) +
-        (placeScore ?? 0) +
-        (promoScore ?? 0);
-
-    totalScore = totalScore / kpiCount;
-  }
-  if (kpiCountCompetition > 0) {
-    totalScoreCompitition =
-        (productScoreCompetition ?? 0) +
-        (priceScoreCompetition ?? 0) +
-        (placeScoreCompetition ?? 0) +
-        (promoScoreCompetition ?? 0);
-    totalScoreCompitition = totalScoreCompitition / kpiCountCompetition;
-  }*/
+  final visitDate = DateTime.now().toUtc().toIso8601String();
+  final missionReady = MissionUploadServerModel(
+    customerId: customerId,
+    dataCollectorUserId: userId,
+    visitDate: visitDate,
+    timeIn: mission.timeIn,
+    timeOut: mission.timeOut,
+    customerLatByDC: mission.customerLatByDC,
+    customerLongByDC: mission.customerLongByDC,
+    customerNameByDC: mission.customerNameByDC,
+    customerPictureByDC: mission.customerPictureByDC,
+    pointsEarned: 0,
+    totalScore: mission.totalScore,
+    visitMaxPoints: 0,
+    totalScoreCompetition: mission.totalScoreCompetition,
+    productScoreCompetition: mission.productScoreCompetition,
+    price: price,
+    priceScore: mission.priceScore,
+    priceScoreCompetition: mission.priceScoreCompetition,
+    place: place,
+    placeScore: mission.placeScore,
+    placeScoreCompetition: mission.placeScoreCompetition,
+    promo: promo,
+    promoScore: mission.promoScore,
+    promoScoreCompetition: mission.promoScoreCompetition,
+    product: product,
+    productScore: mission.productScore,
+    photo: photo,
+    watchOut: [],
+    genericQuestionsData: [],
+  );
+  missionServerProvider.addMissionReady(missionReady);
 }

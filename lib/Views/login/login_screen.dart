@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/utils/provider/login_provider.dart';
-import 'package:flutter_salesman_module/utils/services/global_methods.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../components/custom_asset_image.dart';
 import '../../components/custom_text_field.dart';
 import '../../components/custom_button.dart';
@@ -16,7 +15,7 @@ import '../../utils/constants/app_font_family.dart';
 import '../../utils/extentions/nav_extention.dart';
 import '../../utils/route/routes.dart';
 import 'widgets/copy_right.dart';
-import '../../models/token_model.dart'; // Make sure this contains UserModel
+import '../../models/token_model.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -59,7 +58,6 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } catch (e) {
         debugPrint('❌ Failed to load saved user: $e');
-        // Let it continue to show login screen
       }
     }
   }
@@ -95,18 +93,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          "Salesman Login",
+                          S.of(context).salesman_login_button,
                           style: TextStyles.textTitleStyle,
                         ),
                         CustomTextField(
-                          label: 'Username',
+                          label: S.of(context).username_hint,
                           labelStyle: TextStyles.hintTextStyle,
                           hint: '',
                           controller: usernameController,
                         ),
                         const SizedBox(height: 10),
                         CustomTextField(
-                          label: 'Password',
+                          label: S.of(context).password_hint,
                           hint: '',
                           labelStyle: TextStyles.hintTextStyle,
                           controller: passwordController,
@@ -157,8 +155,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                         strokeWidth: 2,
                                       ),
                                     )
-                                    : const Text(
-                                      'Login',
+                                    : Text(
+                                      S.of(context).login,
                                       style: TextStyle(
                                         color: AppColors.primaryWhitColor,
                                         fontSize: 16,

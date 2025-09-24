@@ -7,28 +7,41 @@ import 'package:flutter_salesman_module/Views/takePictureForCategroies/take_pict
 import 'package:flutter_salesman_module/api/upload_api.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
 import 'package:flutter_salesman_module/components/custom_button.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/category_model.dart';
 import 'package:flutter_salesman_module/models/channel_data_model.dart';
+import 'package:flutter_salesman_module/models/customer_model.dart';
 import 'package:flutter_salesman_module/models/kpi_model.dart';
 import 'package:flutter_salesman_module/utils/constants/app_assets.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
+import 'package:flutter_salesman_module/utils/provider/get_mission_upload.dart';
+import 'package:flutter_salesman_module/utils/provider/loader_provider.dart';
 import 'package:flutter_salesman_module/utils/provider/login_provider.dart';
 import 'package:flutter_salesman_module/utils/provider/upload2_provider.dart';
 import 'package:flutter_salesman_module/utils/provider/upload_mission_date.dart';
+import 'package:flutter_salesman_module/utils/provider/channel_data_provider.dart';
 import 'package:flutter_salesman_module/utils/services/buttonPresses/mission_complete_button.dart';
 import 'package:flutter_salesman_module/utils/services/global_methods.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 
 class StoreAuditScreen extends StatefulWidget {
   final int channelId;
   final String customerName;
   final int customerId;
+  final String customerPicture;
+  final Customer? customer;
+  final bool isImageMandatory;
 
   const StoreAuditScreen({
     super.key,
     required this.channelId,
     required this.customerName,
     required this.customerId,
+    required this.customerPicture,
+    this.customer,
+    required this.isImageMandatory,
   });
 
   @override
@@ -42,21 +55,22 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
   @override
   void initState() {
     super.initState();
-    print("sssssssssssssss${widget.channelId}");
+
     matchingChannel = GlobalMethods.getChannelById(widget.channelId, context);
-    kpiList = GlobalMethods.getKpiList(
-      widget.channelId,
-      context,
-      matchingChannel,
-    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final loginProvider = context.read<LoginProvider>();
+      GlobalMethods.checkBatteryLevel(context);
+      _initializeMission();
+      /* final loginProvider = context.read<LoginProvider>();
 
       final customerId = widget.customerId;
       final dataCollectorUserId = loginProvider.user!.userId!;
       final visitDate = DateTime.now().toUtc().toIso8601String();
-
+      final coords = _requestLocationPermission(
+        customerId: widget.customerId,
+        provider: MissionUpload2Provider(),
+        userId: dataCollectorUserId,
+      );
       final missionProvider2 = context.read<MissionUpload2Provider>();
       if (missionProvider2.getMission(
             customerId,
@@ -67,9 +81,104 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
           customerId: customerId,
           userId: dataCollectorUserId,
           visitDate: visitDate,
+          customerLatByDC: coords['latitude'],
+          customerLongByDC: coords['longitude'],
         );
-      }
+      }*/
     });
+  }
+  /*
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    kpiList = GlobalMethods.getKpiList(
+      widget.channelId,
+      context,
+      matchingChannel,
+      widget.customer,
+    );
+  }*/
+
+  Future<void> _initializeMission() async {
+    final loginProvider = context.read<LoginProvider>();
+    final missionProvider = context.read<MissionUpload2Provider>();
+
+    final customerId = widget.customerId;
+    final dataCollectorUserId = loginProvider.user!.userId!;
+
+    final coords = await _requestLocationPermission(
+      customerId: customerId,
+      provider: missionProvider,
+      userId: dataCollectorUserId,
+    );
+    final mission = missionProvider.getMission(
+      widget.customerId,
+      dataCollectorUserId,
+    );
+    if (mission == null) {
+      kpiList = GlobalMethods.getKpiList(
+        widget.channelId,
+        context,
+        matchingChannel,
+        widget.customer,
+      );
+      final hasKpiId1 = kpiList.any((kpi) => kpi.kpiId == '1');
+      final hasKpiId2 = kpiList.any((kpi) => kpi.kpiId == '2');
+      final hasKpiId3 = kpiList.any((kpi) => kpi.kpiId == '3');
+      final hasKpiId4 = kpiList.any((kpi) => kpi.kpiId == '4');
+      missionProvider.initializeMission(
+        customerId: customerId,
+        userId: dataCollectorUserId,
+        showProduct: hasKpiId1,
+        showPrice: hasKpiId2,
+        showPlace: hasKpiId3,
+        showPromo: hasKpiId4,
+
+        //  customerLatByDC: coords!['latitude'].toString(),
+        //customerLongByDC: coords['longitude'].toString(),
+        customerNameByDC: widget.customerName,
+        customerPictureByDC: widget.customerPicture,
+      );
+    } else {
+      kpiList = GlobalMethods.getKpiList(
+        widget.channelId,
+        context,
+        matchingChannel,
+        widget.customer,
+        showProduct: mission.showProduct,
+        showPrice: mission.showPrice,
+        showPlace: mission.showPlace,
+        showPromo: mission.showPromo,
+      );
+      setState(() {});
+    }
+  }
+
+  Future<Map<String, double>?> _requestLocationPermission({
+    required int customerId,
+    required int userId,
+    required MissionUpload2Provider provider,
+  }) async {
+    final status = await Permission.location.status;
+
+    if (!status.isGranted) {
+      final result = await Permission.location.request();
+
+      if (!result.isGranted) {
+        return null;
+      }
+    }
+
+    final locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 0,
+    );
+
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: locationSettings,
+    );
+
+    return {'latitude': position.latitude, 'longitude': position.longitude};
   }
 
   @override
@@ -94,16 +203,28 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
       customerId: widget.customerId,
       userId: userId,
     );
+    final missionProvider2 = context.watch<MissionUpload2Provider>();
+    final imageCount = missionProvider2.getTotalImagesByCustomer(
+      customerId: widget.customerId,
+      userId: loginProvider.user!.userId ?? 0,
+    );
+    final unAvImages = missionProvider2.getNotAvailableItems(
+      customerId: widget.customerId,
+      userId: loginProvider.user!.userId ?? 0,
+    );
 
-    final hasKpiId1 = kpiList.any((kpi) => kpi.kpiId == '1');
-    final hasKpiId2 = kpiList.any((kpi) => kpi.kpiId == '2');
-    final hasKpiId3 = kpiList.any((kpi) => kpi.kpiId == '3');
-    final hasKpiId4 = kpiList.any((kpi) => kpi.kpiId == '4');
-
-    final showProduct = hasKpiId1 ? isDone : null;
-    final showPrice = hasKpiId2 ? isCompletedPrice : null;
-    final showPlace = hasKpiId3 ? isCompletedPlace : null;
-    final showPromo = hasKpiId4 ? isCompletedPromo : null;
+    final mission = missionProvider.getMission(widget.customerId, userId);
+    if (mission == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final showProduct = mission.showProduct ? isDone : null;
+    final showPrice = mission.showPrice ? isCompletedPrice : null;
+    final showPlace = mission.showPlace ? isCompletedPlace : null;
+    final showPromo = mission.showPromo ? isCompletedPromo : null;
+    final showCategoryImages =
+        (widget.isImageMandatory &&
+            (imageCount + unAvImages.length) == (categories.length * 2)) ||
+        (!widget.isImageMandatory);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: AppColors.primaryWhitColor,
@@ -127,95 +248,214 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
                         showPrice,
                         showPlace,
                         showPromo,
+                        showCategoryImages,
                       ].whereType<bool>().every((e) => e))
                         Padding(
                           padding: const EdgeInsets.only(bottom: 40),
-                          child: CustomContainer(
-                            onTap: () async {
-                              final date = GlobalMethods.getFormattedGmtDate();
-                              final mission = missionProvider.getMission(
-                                widget.customerId,
-                                userId,
+                          child: Consumer<LoaderProvider>(
+                            builder: (context, loaderProvider, child) {
+                              final isUploading = loaderProvider.isLoading(
+                                'mission_upload',
                               );
 
-                              try {
-                                if (mission != null &&
-                                    mission.totalScore != null) {
-                                  await UploadApi.uploadMissionApi(
-                                    loginProvider.user?.userName ?? "",
-                                    userId.toString(),
-                                    date,
-                                    loginProvider.user?.token ?? "",
-                                    mission,
-                                  );
+                              return CustomContainer(
+                                onTap:
+                                    isUploading
+                                        ? null
+                                        : () async {
+                                          final loaderProvider =
+                                              context.read<LoaderProvider>();
+                                          final missionServerProvider =
+                                              Provider.of<
+                                                MissionUploadServerProvider
+                                              >(context, listen: false);
 
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Mission uploaded successfully!",
-                                      ),
-                                    ),
-                                  );
+                                          // Start loading
+                                          loaderProvider.show('mission_upload');
 
-                                  context
-                                      .read<MissionUploadDateProvider>()
-                                      .setUploadDateForCustomer(
-                                        mission.customerId,
-                                        DateTime.tryParse(mission.timeOut!)!,
-                                      );
-                                } else {
-                                  completeMissionPress(
-                                    context,
-                                    widget.customerId,
-                                    loginProvider.user!.userId ?? 0,
-                                  );
-                                }
-                              } catch (e) {
-                                print("$e");
-                              }
+                                          try {
+                                            final date =
+                                                GlobalMethods.getFormattedGmtDate();
+                                            final mission = missionProvider
+                                                .getMission(
+                                                  widget.customerId,
+                                                  userId,
+                                                );
+                                            final missionServ =
+                                                missionServerProvider
+                                                    .getMission(
+                                                      widget.customerId,
+                                                      userId,
+                                                    );
+
+                                            if (missionServ != null &&
+                                                missionServ.totalScore !=
+                                                    null) {
+                                              await UploadApi.uploadMissionApi(
+                                                loginProvider.user?.userName ??
+                                                    "",
+                                                userId.toString(),
+                                                date,
+                                                loginProvider.user?.token ?? "",
+                                                missionServ,
+                                              );
+
+                                              Navigator.pop(context);
+                                              final provider =
+                                                  context
+                                                      .read<
+                                                        ChannelDataProvider
+                                                      >();
+                                              provider.fetchChannelData(
+                                                loginProvider.user?.userName ??
+                                                    "",
+                                                loginProvider.user?.token ?? "",
+                                                DateTime.now()
+                                                    .toUtc()
+                                                    .toIso8601String(),
+                                                loginProvider.user?.userId
+                                                        .toString() ??
+                                                    "",
+                                                () => loginProvider.logout(
+                                                  context,
+                                                ),
+                                                context,
+                                              );
+
+                                              var missionProvider =
+                                                  context
+                                                      .read<
+                                                        MissionUpload2Provider
+                                                      >();
+                                              missionProvider =
+                                                  context
+                                                      .read<
+                                                        MissionUpload2Provider
+                                                      >();
+                                              await missionProvider
+                                                  .loadMissionsFromStorage();
+                                              missionProvider.clearMission(
+                                                customerId: widget.customerId,
+                                                userId: userId,
+                                              );
+                                              context
+                                                  .read<
+                                                    MissionUploadDateProvider
+                                                  >()
+                                                  .setUploadDateForCustomer(
+                                                    mission!.customerId,
+                                                    DateTime.tryParse(
+                                                      mission.timeOut!,
+                                                    )!,
+                                                  );
+                                            } else {
+                                              completeMissionPress(
+                                                context,
+                                                widget.customerId,
+                                                loginProvider.user!.userId ?? 0,
+                                              );
+                                            }
+                                          } catch (e) {
+                                            debugPrint('Upload error: $e');
+                                            // Show error message to user
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Upload failed: ${e.toString()}',
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          } finally {
+                                            // Stop loading
+                                            loaderProvider.hide(
+                                              'mission_upload',
+                                            );
+                                          }
+                                        },
+                                height: 70,
+                                borderRadius: 15,
+                                showShadow: true,
+                                gradient:
+                                    isUploading
+                                        ? [
+                                          Colors.grey.shade400,
+                                          Colors.grey.shade500,
+                                          Colors.grey.shade400,
+                                        ]
+                                        : [
+                                          AppColors.primaryRed,
+                                          AppColors.buttonRedMidColor,
+                                          AppColors.primaryRed,
+                                        ],
+                                child:
+                                    isUploading
+                                        ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
+                                              ),
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              S.of(context).uploading,
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                        : _buildCardRow(
+                                          "",
+                                          missionProvider
+                                                      .getMission(
+                                                        widget.customerId,
+                                                        userId,
+                                                      )!
+                                                      .totalScore !=
+                                                  null
+                                              ? S
+                                                  .of(context)
+                                                  .upload_your_mission
+                                              : S.of(context).complete_mission,
+                                          centerText: true,
+                                          checkTrue: true,
+                                        ),
+                              );
                             },
-                            height: 70,
-                            borderRadius: 15,
-                            showShadow: true,
-                            gradient: [
-                              AppColors.primaryRed,
-                              AppColors.buttonRedMidColor,
-                              AppColors.primaryRed,
-                            ],
-                            child: _buildCardRow(
-                              "",
-                              missionProvider
-                                          .getMission(
-                                            widget.customerId,
-                                            userId,
-                                          )!
-                                          .totalScore !=
-                                      null
-                                  ? "Upload Mission"
-                                  : "Complete your mission",
-                              centerText: true,
-                              checkTrue: true,
-                            ),
                           ),
                         ),
-                      const Text(
-                        "Store Audit:",
+                      Text(
+                        S.of(context).store_check,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryBlack,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      //     const SizedBox(height: 20),
 
                       // Watchout
-                      _buildWatchoutCard(),
+                      // _buildWatchoutCard(),
 
                       // Generic Questions
-                      if ((matchingChannel?.genericQuestions ?? []).isNotEmpty)
+                      /* if ((matchingChannel?.genericQuestions ?? []).isNotEmpty)
                         _buildGenericQuestionCard(
                           matchingChannel!.genericQuestions!.length,
-                        ),
+                        ),*/
 
                       // Take Picture
                       _buildCameraCard(categories),
@@ -244,13 +484,13 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
   Widget _buildWatchoutCard() {
     return CustomContainer(
       onTap: () {
-        final missionProvider = context.read<MissionUpload2Provider>();
-        final loginProvider = context.read<LoginProvider>();
-        final userId = loginProvider.user!.userId ?? 0;
-        missionProvider.printMissionDetails(
-          customerId: widget.customerId,
-          userId: userId,
-        );
+        print("Generic Questions Clicked");
+        print("ssssssssssssss${widget.customerName}");
+        print("place${widget.customer!.placeKPIVisits}");
+        print("price${widget.customer!.priceKPIVisits}");
+        print("promo${widget.customer!.promoKPIVisits}");
+        print("prod${widget.customer!.productKPIVisits}");
+        print("isImageMandatory${widget.isImageMandatory}");
       },
       height: 70,
       borderRadius: 15,
@@ -260,7 +500,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
         AppColors.buttonRedMidColor,
         AppColors.buttonRedTopColor,
       ],
-      child: _buildCardRow(AppAssets.watchOutImage, "Add a Watchout"),
+      child: _buildCardRow(AppAssets.watchOutImage, S.of(context).add_watchout),
     );
   }
 
@@ -268,7 +508,15 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
     return Padding(
       padding: const EdgeInsets.only(top: 20),
       child: CustomContainer(
-        onTap: () {},
+        onTap: () {
+          print("Generic Questions Clicked");
+          print("ssssssssssssss${widget.customerName}");
+          print("place${widget.customer!.placeKPIVisits}");
+          print("price${widget.customer!.priceKPIVisits}");
+          print("promo${widget.customer!.promoKPIVisits}");
+          print("prod${widget.customer!.productKPIVisits}");
+          print("isImageMandatory${widget.isImageMandatory}");
+        },
         height: 70,
         borderRadius: 15,
         showShadow: true,
@@ -296,14 +544,17 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
     final displayText =
         imageCount > 0
             ? '$imageCount Picture${imageCount > 1 ? 's' : ''} Taken'
-            : 'Take pictures of all your categories';
+            : S.of(context).take_pictures;
     return Padding(
       padding: const EdgeInsets.only(top: 20),
       child: Hero(
         tag: "take_picture_for_category",
         child: CustomContainer(
           onTap: () {
-            Navigator.of(context).push(
+            missionProvider2.clearAllMissions().then((value) {
+              Navigator.pop(context);
+            });
+            /*  Navigator.of(context).push(
               MaterialPageRoute(
                 builder:
                     (_) => TakePictureMainScreen(
@@ -311,7 +562,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
                       customerId: widget.customerId,
                     ),
               ),
-            );
+            );*/
           },
           height: 70,
           borderRadius: 15,
@@ -352,7 +603,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
               imagePath: icon,
               width: 50,
               height: 50,
-              color: AppColors.darkGrey.withOpacity(0.7),
+              color: AppColors.darkGrey.withValues(alpha: 0.7),
             ),
           ),
         Expanded(

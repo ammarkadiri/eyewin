@@ -11,7 +11,7 @@ class Guideline {
   final int? groupId;
   final String? groupName;
   int? abidedBy;
-  final String? visitDate;
+  String? visitDate;
   int? dataCollectorUserId;
 
   Guideline({

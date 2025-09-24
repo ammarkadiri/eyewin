@@ -1,9 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
-import 'package:flutter_salesman_module/components/custom_asset_image.dart';
 import 'package:flutter_salesman_module/models/guidline_model.dart';
-import 'package:flutter_salesman_module/utils/constants/app_assets.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
 import 'package:flutter_salesman_module/Views/perfectGuideline/guidelineWidget/guideline_item.dart';
 
@@ -14,12 +12,12 @@ class ListWithGroup extends StatelessWidget {
   final List<Guideline>? guidelineList;
 
   const ListWithGroup({
-    Key? key,
+    super.key,
     required this.rowControllers,
     required this.clusterCount,
     required this.productWidth,
     this.guidelineList,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

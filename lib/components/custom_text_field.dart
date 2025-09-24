@@ -16,12 +16,11 @@ class CustomTextField extends StatelessWidget {
   final String hintFontFamily;
   final EdgeInsetsGeometry? contentPadding;
   final FocusNode? focusNode;
-
-  // Add this parameter
+  final ValueChanged<String>? onChanged;
   final TextInputType? keyboardType;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     this.label,
     required this.hint,
     this.icon,
@@ -36,8 +35,9 @@ class CustomTextField extends StatelessWidget {
     this.contentPadding,
     this.hintFontFamily = AppFontFamily.cairoRegular,
     this.focusNode,
+    this.onChanged,
     this.keyboardType, // add here
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +69,7 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       focusNode: focusNode,
+      onChanged: onChanged,
       keyboardType: keyboardType, // pass here
       decoration: InputDecoration(
         labelText: label,

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/utils/constants/app_assets.dart';
-import 'package:flutter_salesman_module/utils/extentions/nav_extention.dart';
 import 'package:flutter_salesman_module/utils/provider/login_provider.dart';
-import 'package:flutter_salesman_module/utils/route/routes.dart';
 import 'package:provider/provider.dart';
 
 class TopUserBar extends StatelessWidget {
@@ -24,7 +22,7 @@ class TopUserBar extends StatelessWidget {
                     user?.profilePicture != null &&
                             user!.profilePicture!.isNotEmpty
                         ? Image.network(
-                          user!.profilePicture!,
+                          user.profilePicture!,
                           width: 60,
                           height: 60,
                           fit: BoxFit.cover,

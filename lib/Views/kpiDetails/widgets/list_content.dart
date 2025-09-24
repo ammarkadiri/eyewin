@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
 import 'package:flutter_salesman_module/components/custom_buttom_sheet.dart';
 import 'package:flutter_salesman_module/components/custom_button.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/guidline_model.dart';
 import 'package:flutter_salesman_module/models/place_model.dart';
 import 'package:flutter_salesman_module/models/price_model.dart';
@@ -101,18 +102,13 @@ class ListContentWidget extends StatelessWidget {
       productId: priceList!.id!,
     );
 
-    // Debug print outputs
-    debugPrint('getSelectionByUserId output: $selected');
-    debugPrint('getEnteredPrice output: $enteredPrice');
-
     return _buildCard(
       context: context,
       imageUrl: priceList?.skuImage,
       title: priceList?.skuName,
       iscomp: priceList?.isCompetition,
       subtitleWidgets: [
-        if (priceList?.minPrice != null && priceList?.maxPrice != null)
-          _buildPriceRange(priceList!),
+        _buildPriceRange(priceList!),
         if (enteredPrice != null && enteredPrice > 0)
           _buildEnteredPrice(enteredPrice),
       ],
@@ -122,17 +118,21 @@ class ListContentWidget extends StatelessWidget {
 
   Widget _buildPriceRange(PriceMustItem item) => Row(
     children: [
-      CustomAssetImage(
-        imagePath: AppAssets.priceTargetImage,
-        width: 15,
-        height: 15,
-      ),
+      if (priceList?.minPrice != null || priceList?.maxPrice != null)
+        CustomAssetImage(
+          imagePath: AppAssets.priceTargetImage,
+          width: 15,
+          height: 15,
+        ),
       const SizedBox(width: 5),
-      Text(GlobalMethods.formatPrice(item.minPrice ?? 0)),
-      const SizedBox(width: 10),
-      Container(width: 5, height: 1, color: AppColors.primaryBlack),
-      const SizedBox(width: 10),
-      Text(GlobalMethods.formatPrice(item.maxPrice ?? 0)),
+      if (priceList?.minPrice != null)
+        Text(GlobalMethods.formatPrice(item.minPrice ?? 0)),
+      if (priceList?.minPrice != null) const SizedBox(width: 10),
+      if (priceList?.minPrice != null && priceList?.maxPrice != null)
+        Container(width: 5, height: 1, color: AppColors.primaryBlack),
+      if (priceList?.minPrice != null) const SizedBox(width: 10),
+      if (priceList?.maxPrice != null)
+        Text(GlobalMethods.formatPrice(item.maxPrice ?? 0)),
     ],
   );
 
@@ -181,10 +181,10 @@ class ListContentWidget extends StatelessWidget {
               priceList: priceList,
               priceItems: priceItems,
             ),
-        child: const Padding(
+        child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: Text(
-            "Capture Price",
+            S.of(context).enter_price,
             style: TextStyle(color: Colors.white, fontSize: 13),
           ),
         ),
@@ -271,10 +271,6 @@ class ListContentWidget extends StatelessWidget {
                   icon: Icons.check,
                   color: const Color.fromRGBO(16, 206, 104, 1),
                   onTap: () {
-                    debugPrint(
-                      "Tapped correct for kpiId=$kpiId, guidelineId=${item.id}",
-                    );
-
                     if (kpiId == 4) {
                       selectionProvider.selectPromoGuideline(
                         customerId: custmoerId,
@@ -301,10 +297,6 @@ class ListContentWidget extends StatelessWidget {
                   icon: Icons.close,
                   color: AppColors.buttonRedTopColor,
                   onTap: () {
-                    debugPrint(
-                      "Tapped incorrect for kpiId=$kpiId, guidelineId=${item.id}",
-                    );
-
                     if (kpiId == 4) {
                       selectionProvider.selectPromoGuideline(
                         customerId: custmoerId,
@@ -349,16 +341,18 @@ class ListContentWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(width: 10),
-              CachedNetworkImage(
-                imageUrl: imageUrl ?? "",
-                height: 60,
-                width: 60,
-                fit: BoxFit.contain,
-                placeholder:
-                    (_, __) => const CircularProgressIndicator(strokeWidth: 2),
-                errorWidget:
-                    (_, __, ___) => const Icon(Icons.broken_image, size: 60),
-              ),
+              if (imageUrl != null)
+                CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  height: 60,
+                  width: 60,
+                  fit: BoxFit.contain,
+                  placeholder:
+                      (_, __) =>
+                          const CircularProgressIndicator(strokeWidth: 2),
+                  errorWidget:
+                      (_, __, ___) => const Icon(Icons.broken_image, size: 60),
+                ),
               const SizedBox(width: 10),
 
               Expanded(
@@ -411,7 +405,10 @@ class ListContentWidget extends StatelessWidget {
           color: AppColors.primaryWhitColor,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 6),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 6,
+            ),
           ],
         ),
         child: content,

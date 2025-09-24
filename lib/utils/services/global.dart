@@ -1,1 +1,0 @@
-int productFrequency = 0;

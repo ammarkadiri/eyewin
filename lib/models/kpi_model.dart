@@ -58,9 +58,9 @@ class KPIModel {
       'showPercentages': showPercentages,
       'kpiCompleted': kpiCompleted,
       'description': description,
-      'backgroundStart': backgroundStart?.value,
-      'backgroundMid': backgroundMid?.value,
-      'background': background?.value,
+      'backgroundStart': backgroundStart,
+      'backgroundMid': backgroundMid,
+      'background': background,
       'isTotalAll': isTotalAll,
     };
   }

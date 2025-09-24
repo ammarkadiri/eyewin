@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_salesman_module/models/guidline_model.dart';
-import 'package:flutter_salesman_module/models/place_model.dart';
+import 'package:flutter_salesman_module/models/guidline_model.dart'; 
 import 'package:flutter_salesman_module/models/product_must_model.dart';
 import 'package:flutter_salesman_module/models/price_model.dart';
 import 'package:flutter_salesman_module/utils/services/global_methods.dart';

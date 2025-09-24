@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/utils/constants/app_assets.dart';
 
 class CopyRightWidget extends StatelessWidget {
@@ -17,7 +18,7 @@ class CopyRightWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Powered by',
+                S.of(context).powered_by,
                 textAlign: TextAlign.start,
                 style: TextStyle(fontSize: 9),
               ),
@@ -26,7 +27,10 @@ class CopyRightWidget extends StatelessWidget {
                 width: 50,
                 height: 15,
               ),
-              Text('Version 3.20', style: TextStyle(fontSize: 9)),
+              Text(
+                S.of(context).version_nb(3.23),
+                style: TextStyle(fontSize: 9),
+              ),
             ],
           ),
           Column(
@@ -40,7 +44,7 @@ class CopyRightWidget extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.only(top: 5, right: 5),
                 child: Text(
-                  '© 2025, eQuality SARL',
+                  S.of(context).copy_right(2025),
                   style: TextStyle(fontSize: 10),
                 ),
               ),

@@ -3,7 +3,6 @@ import 'package:flutter_salesman_module/Views/perfectGuideline/guidelineWidget/c
 import 'package:flutter_salesman_module/Views/perfectGuideline/guidelineWidget/header_gruideline.dart';
 import 'package:flutter_salesman_module/Views/perfectGuideline/guidelineWidget/list_with_group.dart';
 import 'package:flutter_salesman_module/models/guidline_model.dart';
-import 'package:flutter_salesman_module/models/place_model.dart';
 import 'package:flutter_salesman_module/models/price_model.dart';
 import 'package:flutter_salesman_module/models/product_must_model.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
@@ -73,7 +72,7 @@ class _DualScrollListsState extends State<DualScrollLists> {
           borderRadius: const BorderRadius.only(topRight: Radius.circular(20)),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
               spreadRadius: 1,
               blurRadius: 5,
               offset: const Offset(0, 0),

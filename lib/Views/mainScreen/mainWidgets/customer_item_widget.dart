@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/Views/mainScreen/mainWidgets/kpi_circle.dart';
+import 'package:flutter_salesman_module/components/custom_animated_dialog.dart';
 import 'package:flutter_salesman_module/components/custom_divider.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/customer_model.dart';
 import 'package:flutter_salesman_module/models/place_model.dart';
 import 'package:flutter_salesman_module/models/price_model.dart';
@@ -14,9 +16,10 @@ import 'package:flutter_salesman_module/utils/route/routes.dart';
 import 'package:flutter_salesman_module/utils/services/global_methods.dart';
 import 'package:provider/provider.dart';
 
-class CustomerItemWidget extends StatelessWidget {
+class CustomerItemWidget extends StatefulWidget {
   final Customer? customer;
   final String clustName;
+  final bool isImageMandatory;
   final int productFrequency;
   final int placeFrequency;
   final int promoFrequency;
@@ -27,6 +30,10 @@ class CustomerItemWidget extends StatelessWidget {
   final List<PromoMustItem> promoMustItem;
   final int channelId;
   final DateTime? uploadDate;
+  final bool showProduct;
+  final bool showPrice;
+  final bool showPlace;
+  final bool showPromo;
   const CustomerItemWidget({
     super.key,
     this.customer,
@@ -40,31 +47,48 @@ class CustomerItemWidget extends StatelessWidget {
     required this.placeMustItem,
     required this.promoMustItem,
     required this.channelId,
+    this.isImageMandatory = false,
     this.uploadDate,
+    required this.showProduct,
+    required this.showPrice,
+    required this.showPlace,
+    required this.showPromo,
   });
 
+  @override
+  State<CustomerItemWidget> createState() => _CustomerItemWidgetState();
+}
+
+class _CustomerItemWidgetState extends State<CustomerItemWidget> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        final uploadDate = context
-            .read<MissionUploadDateProvider>()
-            .getUploadDateForCustomer(customer!.id ?? 0);
-        final dateToCheck = uploadDate ?? customer?.lastVisitDate;
+        final dateToCheck = widget.customer?.lastVisitDate;
+        print("Last Visit Date: $dateToCheck");
 
-        print("upload date is $dateToCheck");
         final todayDate = GlobalMethods.isToday(dateToCheck ?? DateTime.now());
-        print("is today $todayDate");
+        print("Is Today: $todayDate");
         if (dateToCheck != null && todayDate) {
-          print('Already visited today');
+          showTitleSubtitleDialog(
+            context: context,
+            title: S.of(context).warning_title,
+            subtitle: S
+                .of(context)
+                .already_completed_mission_today(widget.customer!.name!),
+            buttonText: S.of(context).ok,
+          );
           return;
         }
         context.pushNamed(
           Routes.storeAuditScreen,
           arguments: {
-            'channelId': channelId,
-            'customerName': customer!.name ?? "",
-            'customerId': customer!.id,
+            'channelId': widget.channelId,
+            'customerName': widget.customer!.name ?? "",
+            'customerId': widget.customer!.id,
+            'customerPicture': widget.customer!.customerImagebyDC ?? "",
+            'customer': widget.customer,
+            'isImageMandatory': widget.isImageMandatory,
           },
         );
       },
@@ -80,7 +104,7 @@ class CustomerItemWidget extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    customer!.name ?? "Customer Name",
+                    widget.customer!.name ?? "Customer Name",
                     style: TextStyle(
                       fontSize: 16,
                       color: AppColors.darkGrey,
@@ -93,49 +117,49 @@ class CustomerItemWidget extends StatelessWidget {
                       KpiCircles(
                         isShow: true,
                         startColor:
-                            productFrequency == 0 || productMustItem.isEmpty
-                                ? AppColors.lightGrey2Color
-                                : AppColors.colorKPIProduct,
+                            widget.showProduct
+                                ? AppColors.colorKPIProduct
+                                : AppColors.lightGrey2Color,
                         endColor:
-                            productFrequency == 0 || productMustItem.isEmpty
-                                ? AppColors.lightGrey2Color
-                                : AppColors.colorKPIPlaceLight,
+                            widget.showProduct
+                                ? AppColors.colorKPIPlaceLight
+                                : AppColors.lightGrey2Color,
                       ),
                       SizedBox(width: 5),
                       KpiCircles(
                         isShow: true,
                         endColor:
-                            priceFrequency == 0 || priceMustItem.isEmpty
-                                ? AppColors.lightGrey2Color
-                                : AppColors.colorKPIPriceLight,
+                            widget.showPrice
+                                ? AppColors.colorKPIPriceLight
+                                : AppColors.lightGrey2Color,
                         startColor:
-                            priceFrequency == 0 || priceMustItem.isEmpty
-                                ? AppColors.lightGrey2Color
-                                : AppColors.colorKPIPrice,
+                            widget.showPrice
+                                ? AppColors.colorKPIPrice
+                                : AppColors.lightGrey2Color,
                       ),
                       SizedBox(width: 5),
                       KpiCircles(
                         isShow: true,
                         startColor:
-                            placeFrequency == 0 || placeMustItem.isEmpty
-                                ? AppColors.lightGrey2Color
-                                : AppColors.colorKPIPlace,
+                            widget.showPlace
+                                ? AppColors.colorKPIPlace
+                                : AppColors.lightGrey2Color,
                         endColor:
-                            placeFrequency == 0 || placeMustItem.isEmpty
-                                ? AppColors.lightGrey2Color
-                                : AppColors.colorKPIPlaceLight,
+                            widget.showPlace
+                                ? AppColors.colorKPIPlaceLight
+                                : AppColors.lightGrey2Color,
                       ),
                       SizedBox(width: 5),
                       KpiCircles(
                         isShow: true,
                         endColor:
-                            promoFrequency == 0 || promoMustItem.isEmpty
-                                ? AppColors.lightGrey2Color
-                                : AppColors.colorKPIPromotionLight,
+                            widget.showPromo
+                                ? AppColors.colorKPIPromotionLight
+                                : AppColors.lightGrey2Color,
                         startColor:
-                            promoFrequency == 0 || promoMustItem.isEmpty
-                                ? AppColors.lightGrey2Color
-                                : AppColors.colorKPIPromotion,
+                            widget.showPromo
+                                ? AppColors.colorKPIPromotion
+                                : AppColors.lightGrey2Color,
                       ),
                     ],
                   ),
@@ -143,7 +167,7 @@ class CustomerItemWidget extends StatelessWidget {
               ),
 
               Text(
-                clustName,
+                widget.clustName,
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textGreyColor,
@@ -151,7 +175,7 @@ class CustomerItemWidget extends StatelessWidget {
                 ),
               ),
               Text(
-                customer!.commercialRegistrationNumber ?? "CRN",
+                widget.customer!.commercialRegistrationNumber ?? "CRN",
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textGreyColor,
@@ -160,14 +184,13 @@ class CustomerItemWidget extends StatelessWidget {
               ),
               Consumer<MissionUploadDateProvider>(
                 builder: (context, provider, _) {
-                  final uploadDate = provider.getUploadDateForCustomer(
-                    customer!.id ?? 0,
-                  );
-                  final timeText = GlobalMethods.formatTimeAgo(uploadDate);
+                  final utcDate = widget.customer?.lastVisitDate;
+                  final now = DateTime.now();
+                  final timezoneOffset = now.timeZoneOffset;
+                  final localDate = utcDate?.add(timezoneOffset);
+
                   return Text(
-                    uploadDate != null
-                        ? timeText
-                        : GlobalMethods.formatTimeAgo(customer?.lastVisitDate),
+                    GlobalMethods.formatTimeAgo(context, localDate),
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.primaryBlack,
@@ -176,13 +199,17 @@ class CustomerItemWidget extends StatelessWidget {
                 },
               ),
               Text(
-                customer!.linkedRetailer != null
-                    ? "Linked with ${customer!.linkedRetailer!.name}"
-                    : "Engage customer to download EYE Win!",
+                widget.customer!.linkedRetailer != null
+                    ? S
+                        .of(context)
+                        .linked_with(
+                          widget.customer!.linkedRetailer!.name ?? "",
+                        )
+                    : S.of(context).engage_customer,
                 style: TextStyle(
                   fontSize: 12,
                   color:
-                      customer!.linkedRetailer != null
+                      widget.customer!.linkedRetailer != null
                           ? AppColors.darkGreenColor
                           : AppColors.buttonRedMidColor,
                 ),

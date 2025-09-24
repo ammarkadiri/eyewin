@@ -4,6 +4,7 @@ import 'package:flutter_salesman_module/Views/kpiDetails/widgets/group_name.dart
 import 'package:flutter_salesman_module/Views/kpiDetails/widgets/list_button.dart';
 import 'package:flutter_salesman_module/Views/kpiDetails/widgets/list_content.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/guidline_model.dart';
 import 'package:flutter_salesman_module/models/kpi_model.dart';
 import 'package:flutter_salesman_module/models/place_model.dart';
@@ -163,7 +164,7 @@ class _SliverListWidgetState extends State<SliverListWidget> {
           (group) => GroupNameWidget(
             groupTitle: group,
             backgroundStart: widget.item.backgroundStart,
-            backgroundMid: widget.item.backgroundMid?.withOpacity(0.5),
+            backgroundMid: widget.item.backgroundMid?.withValues(alpha: 0.5),
           ),
       itemBuilder: (context, product) {
         final groupName = product.categoryName ?? '';
@@ -216,18 +217,18 @@ class _SliverListWidgetState extends State<SliverListWidget> {
                     context: context,
                     builder:
                         (_) => AlertDialog(
-                          title: const Text('Warning'),
-                          content: const Text(
-                            'Are you sure that all pasta SKUs are available?',
+                          title: Text(S.of(context).warning_title),
+                          content: Text(
+                            S.of(context).are_you_sure_to_set_all_available,
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
-                              child: const Text('No'),
+                              child: Text(S.of(context).no),
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Yes'),
+                              child: Text(S.of(context).yes),
                             ),
                           ],
                         ),
@@ -278,7 +279,7 @@ class _SliverListWidgetState extends State<SliverListWidget> {
           (group) => GroupNameWidget(
             groupTitle: group,
             backgroundStart: widget.item.backgroundStart,
-            backgroundMid: widget.item.backgroundMid?.withOpacity(0.5),
+            backgroundMid: widget.item.backgroundMid?.withValues(alpha: 0.5),
           ),
       itemBuilder:
           (context, price) => Column(
@@ -323,7 +324,7 @@ class _SliverListWidgetState extends State<SliverListWidget> {
             GroupNameWidget(
               groupTitle: first.categoryName ?? '',
               backgroundStart: widget.item.backgroundStart,
-              backgroundMid: widget.item.backgroundMid?.withOpacity(0.5),
+              backgroundMid: widget.item.backgroundMid?.withValues(alpha: 0.5),
             ),
           ],
         );
@@ -359,7 +360,7 @@ class _SliverListWidgetState extends State<SliverListWidget> {
         return GroupNameWidget(
           groupTitle: first.categoryName ?? '',
           backgroundStart: widget.item.backgroundStart,
-          backgroundMid: widget.item.backgroundMid?.withOpacity(0.5),
+          backgroundMid: widget.item.backgroundMid?.withValues(alpha: 0.5),
         );
       },
       itemBuilder:

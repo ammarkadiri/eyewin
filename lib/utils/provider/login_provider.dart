@@ -20,7 +20,6 @@ class LoginProvider extends ChangeNotifier {
   bool get isLoggedIn => _user != null;
 
   LoginProvider() {
-    print('🔄 Initializing LoginProvider...');
     //  _loadFromPrefs();
   }
 
@@ -34,13 +33,8 @@ class LoginProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    print('🔐 Attempting login...');
-    print('📝 Username: $username');
-    print('🕒 Date (before format): $date');
-
     try {
       final formatted = GlobalMethods.getFormattedGmtDate();
-      print('🕒 Formatted GMT date: $formatted');
 
       final result = await LoginApi.getLoginToken(
         username,
@@ -48,9 +42,6 @@ class LoginProvider extends ChangeNotifier {
         formatted,
       );
       _user = result;
-
-      print('✅ Login successful!');
-      print('👤 User data: ${_user?.toJson()}');
 
       await _saveToPrefs(_user!);
 
@@ -77,7 +68,6 @@ class LoginProvider extends ChangeNotifier {
   }
 
   Future<void> logout(BuildContext context) async {
-    print('🚪 Logging out...');
     //_user = null;
 
     final prefs = await SharedPreferences.getInstance();
@@ -86,7 +76,6 @@ class LoginProvider extends ChangeNotifier {
       Routes.logInScreen,
       predicate: (route) => false,
     );
-    print('🗑️ Removed user data from SharedPreferences');
     notifyListeners();
   }
 
@@ -94,7 +83,6 @@ class LoginProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final json = jsonEncode(user.toJson());
 
-    print('💾 Saving user to SharedPreferences: $json');
     await prefs.setString(_kUserKey, json);
   }
 }

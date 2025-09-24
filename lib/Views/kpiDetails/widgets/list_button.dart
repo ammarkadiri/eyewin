@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/components/custom_button.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/utils/constants/app_font_family.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
 
@@ -30,7 +31,8 @@ class ListButtonWidget extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: Text(
-                    'All $groupTitle SKUs available',
+                    S.of(context).all_skus_available(groupTitle),
+                    // 'All $groupTitle SKUs available',
                     style: const TextStyle(
                       color: AppColors.primaryWhitColor,
                       fontFamily: AppFontFamily.cairoBold,

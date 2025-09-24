@@ -9,16 +9,12 @@ class MissionStorageHelper {
 
   /// Save mission by userId
   static void saveMission(int userId, MissionUploadDetails mission) {
-    print('Saving mission for userId: $userId');
-    print('Mission data: ${mission.toJson()}');
     _storage.write(_storageKey(userId), mission.toJson());
   }
 
   /// Load mission by userId
   static MissionUploadDetails? loadMission(int userId) {
-    print('Loading mission for userId: $userId');
     final json = _storage.read(_storageKey(userId));
-    print('Loaded data: $json');
     if (json != null && json is Map) {
       return MissionUploadDetails.fromJson(Map<String, dynamic>.from(json));
     }
@@ -27,14 +23,12 @@ class MissionStorageHelper {
 
   /// Clear saved mission
   static void clearMission(int userId) {
-    print('Clearing mission for userId: $userId');
     _storage.remove(_storageKey(userId));
   }
 
   /// Check if mission exists
   static bool hasMission(int userId) {
     final exists = _storage.hasData(_storageKey(userId));
-    print('Has mission for userId: $userId => $exists');
     return exists;
   }
 }

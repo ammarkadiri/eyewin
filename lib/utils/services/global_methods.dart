@@ -1,7 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:another_flushbar/flushbar.dart';
+import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/channel_data_model.dart';
+import 'package:flutter_salesman_module/models/customer_model.dart';
 import 'package:flutter_salesman_module/models/guidline_model.dart';
 import 'package:flutter_salesman_module/models/kpi_model.dart';
 import 'package:flutter_salesman_module/models/price_model.dart';
@@ -12,6 +16,62 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class GlobalMethods {
+  static String getLocale() {
+    final String defaultLocale = Platform.localeName;
+    String localeDevice = "";
+
+    if (defaultLocale.contains("fr")) {
+      localeDevice = "fr";
+    } else if (defaultLocale.contains("en")) {
+      localeDevice = "en";
+    } else if (defaultLocale.contains("ar")) {
+      localeDevice = "ar";
+    } else {
+      localeDevice = "en";
+    }
+    return localeDevice;
+    // return "ar";
+  }
+
+  static Future<void> checkBatteryLevel(BuildContext context) async {
+    final battery = Battery();
+    final level = await battery.batteryLevel;
+
+    if (level <= 5) {
+      showDialog(
+        context: context,
+        builder:
+            (_) => AlertDialog(
+              title: Text(S.of(context).battery_warning_level_10),
+              content: Text('Battery is at $level%. Please charge your phone!'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+      ).then((value) {
+        Navigator.pop(context);
+      });
+    } else if (level <= 10) {
+      showDialog(
+        context: context,
+        builder:
+            (_) => AlertDialog(
+              title: const Text('Low Battery'),
+              content: Text('Battery is at $level%. Please charge your phone!'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+      );
+    }
+  }
+
   ///This method to call the login and data API
   static String getFormattedGmtDate() {
     final now = DateTime.now().toUtc();
@@ -20,34 +80,30 @@ class GlobalMethods {
     return '$formatted GMT';
   }
 
-  static String stringDate() {
-    final nowUtc = DateTime.now().toUtc();
-    final formatter = DateFormat("yyyy-MM-dd HH:mm:ss +0000", "en_US");
-    return formatter.format(nowUtc);
-  }
-
   /// This method to get last visited customer
-  static String formatTimeAgo(DateTime? lastVisitDate) {
+  static String formatTimeAgo(BuildContext context, DateTime? lastVisitDate) {
     if (lastVisitDate == null) return "Visited date not available";
 
-    final now = DateTime.now().toUtc();
-    final diff = now.difference(lastVisitDate.toUtc());
+    final localLastVisit =
+        lastVisitDate.toLocal(); // convert server UTC date to local
+    final now = DateTime.now(); // local time
+    final diff = now.difference(localLastVisit);
 
     if (diff.inDays >= 7) {
       final weeks = (diff.inDays / 7).floor();
-      return "Visited $weeks week${weeks == 1 ? '' : 's'} ago";
+      return "${S.of(context).visited} ${weeks == 1 ? S.of(context).one_week_ago : S.of(context).weeks_ago(weeks)}";
     } else if (diff.inDays >= 1) {
-      return "Visited ${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago";
+      return "${S.of(context).visited} ${diff.inDays == 1 ? S.of(context).yesterday : S.of(context).days_ago(diff.inDays)}";
     } else if (diff.inHours >= 1) {
-      return "Visited ${diff.inHours} hour${diff.inHours == 1 ? '' : 's'} ago";
+      return "${S.of(context).visited} ${diff.inHours == 1 ? S.of(context).an_hour_ago : "${diff.inHours} ${S.of(context).hours}"}";
     } else if (diff.inMinutes >= 1) {
-      return "Visited ${diff.inMinutes} minute${diff.inMinutes == 1 ? '' : 's'} ago";
+      return "${S.of(context).visited} ${diff.inMinutes == 1 ? S.of(context).a_minute_ago : "${diff.inMinutes} ${S.of(context).mins}"}";
     } else {
-      return "Visited ${diff.inSeconds} second${diff.inSeconds == 1 ? '' : 's'} ago";
+      return "${S.of(context).visited} ${"${diff.inSeconds} ${S.of(context).secs}"}";
     }
   }
 
- static bool isToday(DateTime date) {
+  static bool isToday(DateTime date) {
     final now = DateTime.now();
     return now.year == date.year &&
         now.month == date.month &&
@@ -55,16 +111,13 @@ class GlobalMethods {
   }
 
   ///This method is visit date to upload mission tio server
-  static String stringUploadDate() {
-    final now = DateTime.now().toUtc();
-    final formatted =
-        '${now.year.toString().padLeft(4, '0')}-'
-        '${now.month.toString().padLeft(2, '0')}-'
-        '${now.day.toString().padLeft(2, '0')} '
-        '${now.hour.toString().padLeft(2, '0')}:'
-        '${now.minute.toString().padLeft(2, '0')}:'
-        '${now.second.toString().padLeft(2, '0')} +0000';
-    return formatted;
+  static String stringDate() {
+    // Get current UTC time
+    final nowUtc = DateTime.now().toUtc();
+
+    // Format it with +0000 hardcoded (like Android does)
+    final formatter = DateFormat("yyyy-MM-dd HH:mm:ss '+0000'", 'en');
+    return formatter.format(nowUtc);
   }
 
   static String getLocationFromGroup(String group) {
@@ -132,7 +185,12 @@ class GlobalMethods {
     int channelId,
     BuildContext context,
     matchingChannel,
-  ) {
+    Customer? customer, {
+    bool? showProduct,
+    bool? showPrice,
+    bool? showPlace,
+    bool? showPromo,
+  }) {
     if (matchingChannel == null) return [];
 
     List<Guideline> listGuidLinesPromo = [];
@@ -165,13 +223,16 @@ class GlobalMethods {
         );
       }
     }
-    if ((matchingChannel.productKPIFrequency != null &&
-            matchingChannel.productKPIFrequency! > 0) &&
-        (matchingChannel.productMustItems != null &&
-            matchingChannel.productMustItems!.isNotEmpty)) {
+
+    if (showProduct ??
+        (matchingChannel.productKPIFrequency != null &&
+                matchingChannel.productKPIFrequency! >
+                    customer!.productKPIVisits) &&
+            (matchingChannel.productMustItems != null &&
+                matchingChannel.productMustItems!.isNotEmpty)) {
       listKpi.add(
         KPIModel(
-          title: 'Product',
+          title: S.of(context).product,
           backgroundStart: AppColors.colorKPIProduct,
           backgroundMid: AppColors.colorKPIProductLight,
           kpiId: "1",
@@ -181,46 +242,52 @@ class GlobalMethods {
       );
     }
 
-    if ((matchingChannel.priceKPIFrequency != null &&
-            matchingChannel.priceKPIFrequency! > 0) &&
-        (matchingChannel.priceMustItems != null &&
-            matchingChannel.priceMustItems!.isNotEmpty)) {
+    if (showPrice ??
+        (matchingChannel.priceKPIFrequency != null &&
+                matchingChannel.priceKPIFrequency! >
+                    customer!.priceKPIVisits) &&
+            (matchingChannel.priceMustItems != null &&
+                matchingChannel.priceMustItems!.isNotEmpty)) {
       listKpi.add(
         KPIModel(
           backgroundStart: AppColors.colorKPIPrice,
           backgroundMid: AppColors.colorKPIPriceLight,
           kpiId: "2",
-          title: 'Price',
+          title: S.of(context).price,
           description: matchingChannel.priceMustItems!.length.toString(),
           showPercentages: false,
         ),
       );
     }
 
-    if ((matchingChannel.placeKPIFrequency != null &&
-            matchingChannel.placeKPIFrequency! > 0) &&
-        (matchingChannel.placeMustItems != null &&
-            matchingChannel.placeMustItems!.isNotEmpty)) {
+    if (showPlace ??
+        (matchingChannel.placeKPIFrequency != null &&
+                matchingChannel.placeKPIFrequency! >
+                    customer!.placeKPIVisits) &&
+            (matchingChannel.placeMustItems != null &&
+                matchingChannel.placeMustItems!.isNotEmpty)) {
       listKpi.add(
         KPIModel(
           backgroundStart: AppColors.colorKPIPlace,
           backgroundMid: AppColors.colorKPIPlaceLight,
           kpiId: '3',
-          title: 'Place',
+          title: S.of(context).place,
           description: listGuidLinesPlace.length.toString(),
           showPercentages: false,
         ),
       );
     }
 
-    if ((matchingChannel.promoKPIFrequency != null &&
-            matchingChannel.promoKPIFrequency! > 0) &&
-        (matchingChannel.promoMustItems != null &&
-            matchingChannel.promoMustItems!.isNotEmpty)) {
+    if (showPromo ??
+        (matchingChannel.promoKPIFrequency != null &&
+                matchingChannel.promoKPIFrequency! >
+                    customer!.promoKPIVisits) &&
+            (matchingChannel.promoMustItems != null &&
+                matchingChannel.promoMustItems!.isNotEmpty)) {
       listKpi.add(
         KPIModel(
           kpiId: '4',
-          title: 'Promotion',
+          title: S.of(context).promo,
           backgroundStart: AppColors.colorKPIPromotion,
           backgroundMid: AppColors.colorKPIPromotionLight,
           description: listGuidLinesPromo.length.toString(),
@@ -382,9 +449,6 @@ class GlobalMethods {
     }
 
     final result = guidelineMap.values.toList();
-    print(
-      'Finished perfectGuidelinesPlaces, total unique guidelines: ${result.length}',
-    );
 
     return result;
   }
@@ -401,8 +465,6 @@ class GlobalMethods {
         final guidelines = promo.guidelines ?? [];
 
         for (var guideline in guidelines) {
-          if (guideline == null) continue;
-
           final guidelineId = guideline.guidelineId;
           final channelId = channel.id ?? 0;
           final channelName = channel.name ?? '';
@@ -437,9 +499,6 @@ class GlobalMethods {
     }
 
     final result = guidelineMap.values.toList();
-    print(
-      'Finished perfectGuidelinesPlaces, total unique guidelines: ${result.length}',
-    );
 
     return result;
   }

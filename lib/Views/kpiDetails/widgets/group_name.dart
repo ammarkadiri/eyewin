@@ -19,7 +19,7 @@ class GroupNameWidget extends StatelessWidget {
       child: Container(
         width: MediaQuery.of(context).size.width,
         decoration: BoxDecoration(
-          color: backgroundMid?.withOpacity(0.5) ?? Colors.grey,
+          color: backgroundMid?.withValues(alpha: 0.5) ?? Colors.grey,
           borderRadius: const BorderRadius.only(
             bottomRight: Radius.circular(15),
             topRight: Radius.circular(15),
@@ -32,8 +32,7 @@ class GroupNameWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               color: backgroundStart ?? Colors.black,
-              fontFamily:
-                  'Cairo-Bold', 
+              fontFamily: 'Cairo-Bold',
             ),
           ),
         ),

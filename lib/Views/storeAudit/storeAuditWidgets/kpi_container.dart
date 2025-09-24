@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/kpi_model.dart';
 import 'package:flutter_salesman_module/utils/constants/app_font_family.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
@@ -100,9 +101,9 @@ class KpiCard extends StatelessWidget {
                     ),
                     Text(
                       kpiItem!.kpiId == "1" || kpiItem!.kpiId == "2"
-                          ? "${kpiItem!.description} SKUs"
+                          ? "${kpiItem!.description} ${S.of(context).skus}"
                           : kpiItem!.kpiId == "3" || kpiItem!.kpiId == "4"
-                          ? "${kpiItem!.description} Guidelines"
+                          ? "${kpiItem!.description} ${S.of(context).guidelines_ps}"
                           : "",
                       style: TextStyle(
                         fontSize: 12,
@@ -131,8 +132,8 @@ class KpiCard extends StatelessWidget {
                         percent: livePercent,
                         animationDuration: 2000,
                         progressColor: AppColors.primaryWhitColor,
-                        backgroundColor: AppColors.primaryWhitColor.withOpacity(
-                          0.3,
+                        backgroundColor: AppColors.primaryWhitColor.withValues(
+                          alpha: 0.3,
                         ),
                         center: Text(
                           "${(livePercent * 100).toInt()}%",

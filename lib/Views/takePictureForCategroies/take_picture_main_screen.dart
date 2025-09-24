@@ -1,15 +1,17 @@
 import 'dart:io';
-
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/Views/kpiDetails/widgets/group_name.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/category_model.dart';
 import 'package:flutter_salesman_module/utils/constants/app_assets.dart';
 import 'package:flutter_salesman_module/utils/constants/app_font_family.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
-import 'package:flutter_salesman_module/utils/provider/login_provider.dart'; 
-import 'package:flutter_salesman_module/utils/provider/upload2_provider.dart'; 
+import 'package:flutter_salesman_module/utils/provider/login_provider.dart';
+import 'package:flutter_salesman_module/utils/provider/upload2_provider.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -36,8 +38,24 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
   }
 
   Future<void> _pickImage(String group, int index, int categoryId) async {
-    final loginProvider = Provider.of<LoginProvider>(context, listen: false);
-    final user = loginProvider.user;
+    final missionProvider2 = context.read<MissionUpload2Provider>();
+    final loginProvider = context.read<LoginProvider>();
+
+    // 🔹 Check image limit
+    final images = missionProvider2.getImagesByCustomerCategoryGroup(
+      customerId: widget.customerId,
+      categoryId: categoryId,
+      group: group,
+      userId: loginProvider.user!.userId ?? 0,
+    );
+
+    if (images.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You can only capture up to 5 images.')),
+      );
+      return;
+    }
+
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (context) {
@@ -80,7 +98,80 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
 
     final XFile? pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
-      final imagePath = pickedFile.path;
+      final user = loginProvider.user;
+
+      // 🔹 If "Not Available" was selected → reset it automatically
+      if (missionProvider2.isNotAvailableForCategory(
+        customerId: widget.customerId,
+        categoryId: categoryId,
+        group: group,
+        userId: user!.userId ?? 0,
+      )) {
+        missionProvider2.toggleNotAvailable(
+          customerId: widget.customerId,
+          userId: user.userId ?? 0,
+          categoryId: categoryId,
+          group: group,
+        );
+      }
+
+      // 🔹 Now add the image
+      missionProvider2.addImage(
+        customerId: widget.customerId,
+        userId: user.userId ?? 0,
+        categoryId: categoryId,
+        group: group,
+        imagePath: pickedFile,
+        dataCollectorUserId: user.userId!,
+        itemId: widget.categories![index].categoryId ?? 0,
+      );
+    }
+  }
+
+  /*
+  Future<void> _pickImage(String group, int index, int categoryId) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (source == null) return;
+
+    final permission =
+        source == ImageSource.camera
+            ? Permission.camera
+            : Platform.isIOS
+            ? Permission.photos
+            : Platform.isAndroid && await _isAndroid13OrAbove()
+            ? Permission.photos
+            : Permission.storage;
+
+    final status = await permission.request();
+    if (!status.isGranted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Permission denied')));
+      return;
+    }
+
+    final XFile? pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
       final loginProvider = Provider.of<LoginProvider>(context, listen: false);
       final user = loginProvider.user;
       final capturedImagesProvider = Provider.of<MissionUpload2Provider>(
@@ -92,13 +183,13 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
         userId: loginProvider.user!.userId ?? 0,
         categoryId: categoryId,
         group: group,
-        imagePath: imagePath,
-        visitDate: DateTime.now().toUtc().toIso8601String(),
+        imagePath: pickedFile,
         dataCollectorUserId: user!.userId!,
+        itemId: widget.categories![index].categoryId ?? 0,
       );
     }
   }
-
+*/
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,9 +216,13 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
             forceElevated: true,
 
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 40, bottom: 60),
+              titlePadding: const EdgeInsets.only(
+                left: 40,
+                bottom: 60,
+                right: 40,
+              ),
               title: Text(
-                "Pictures",
+                S.of(context).pictures,
                 style: TextStyle(color: AppColors.primaryWhitColor),
               ),
               background: Hero(
@@ -198,7 +293,7 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
           GroupNameWidget(
             groupTitle: title,
             backgroundStart: AppColors.buttonBlueTopColor,
-            backgroundMid: AppColors.buttonBlueMidColor.withOpacity(0.5),
+            backgroundMid: AppColors.buttonBlueMidColor.withValues(alpha: 0.5),
           ),
           GroupedListView<CategoryList, String>(
             shrinkWrap: true,
@@ -242,6 +337,12 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
       userId: loginProvider.user!.userId ?? 0,
     );
     final hasImages = images.isNotEmpty;
+    final isNotAvailable = missionProvider2.isNotAvailableForCategory(
+      customerId: widget.customerId,
+      categoryId: categoryId,
+      group: group,
+      userId: loginProvider.user!.userId ?? 0,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -250,8 +351,10 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
         children: [
           _buildImageCard(AppAssets.camera, group, index, categoryId),
           const SizedBox(width: 10),
-          if (!hasImages)
-            _buildUnavailableCard(group, index)
+          if (!hasImages && !isNotAvailable)
+            _buildUnavailableCard(group, index, categoryId)
+          else if (isNotAvailable)
+            _buildNotAvailableSelectedCard(group, index, categoryId)
           else
             Expanded(
               child: SizedBox(
@@ -266,12 +369,7 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.file(
-                            File(image.photo),
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                          ),
+                          child: _buildImageWidget(image),
                         ),
                         Positioned(
                           top: 4,
@@ -330,7 +428,7 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
           color: AppColors.primaryWhitColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -343,9 +441,24 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
     );
   }
 
-  Widget _buildUnavailableCard(String group, int index) {
+  Widget _buildUnavailableCard(String group, int index, int categoryId) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        final loginProvider = Provider.of<LoginProvider>(
+          context,
+          listen: false,
+        );
+        final capturedImagesProvider = Provider.of<MissionUpload2Provider>(
+          context,
+          listen: false,
+        );
+        capturedImagesProvider.toggleNotAvailable(
+          customerId: widget.customerId,
+          userId: loginProvider.user!.userId ?? 0,
+          categoryId: categoryId,
+          group: group,
+        );
+      },
       child: Container(
         width: 100,
         height: 100,
@@ -354,7 +467,7 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
           color: AppColors.primaryWhitColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -380,6 +493,86 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildNotAvailableSelectedCard(
+    String group,
+    int index,
+    int categoryId,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        final loginProvider = Provider.of<LoginProvider>(
+          context,
+          listen: false,
+        );
+        final capturedImagesProvider = Provider.of<MissionUpload2Provider>(
+          context,
+          listen: false,
+        );
+        capturedImagesProvider.toggleNotAvailable(
+          customerId: widget.customerId,
+          userId: loginProvider.user!.userId ?? 0,
+          categoryId: categoryId,
+          group: group,
+        );
+      },
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: Colors.red, // Red background when not available is selected
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Not Available",
+              style: TextStyle(
+                color: AppColors.lightGrey2Color,
+                fontFamily: AppFontFamily.cairoBold,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 10),
+            CustomAssetImage(
+              imagePath: AppAssets.cameraNoGrey,
+              width: 60,
+              height: 60,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageWidget(dynamic image) {
+    // Check if we have base64 data
+    if (image.photoBase64 != null && image.photoBase64.isNotEmpty) {
+      try {
+        Uint8List bytes = base64Decode(image.photoBase64);
+        return Image.memory(bytes, width: 100, height: 100, fit: BoxFit.cover);
+      } catch (e) {
+        debugPrint('Error decoding base64 image: $e');
+        // Fallback to file if base64 fails
+      }
+    }
+
+    // Fallback to file display
+    return Image.file(
+      File(image.photo.path),
+      width: 100,
+      height: 100,
+      fit: BoxFit.cover,
     );
   }
 }

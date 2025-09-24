@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/components/custom_back_icon.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
 
 class TopBarGuideline extends StatelessWidget {
@@ -9,11 +10,16 @@ class TopBarGuideline extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        CustomBackIcon(),
-        const Expanded(
-          child: Text(
-            'Guidelines',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        Container(child: CustomBackIcon()),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              S.of(context).guidelines_ps,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
         Container(
@@ -22,7 +28,7 @@ class TopBarGuideline extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha: 0.2),
                 spreadRadius: 1,
                 blurRadius: 5,
                 offset: const Offset(0, 0),
@@ -32,7 +38,7 @@ class TopBarGuideline extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              "Change Filter",
+              S.of(context).change_filter,
               style: TextStyle(fontSize: 11, color: AppColors.filterGreyColor),
             ),
           ),

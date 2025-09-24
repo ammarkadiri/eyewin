@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/product_must_model.dart';
 import 'package:flutter_salesman_module/utils/constants/app_font_family.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
@@ -97,7 +98,7 @@ class ClustItem extends StatelessWidget {
                                 )
                                 : showCollect
                                 ? Text(
-                                  "Collect Price",
+                                  S.of(context).collect_price,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.colorKPIPrice,

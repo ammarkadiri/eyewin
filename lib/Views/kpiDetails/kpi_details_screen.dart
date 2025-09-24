@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/Views/kpiDetails/widgets/sliver_list.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/kpi_model.dart';
 import 'package:flutter_salesman_module/models/place_model.dart';
 import 'package:flutter_salesman_module/models/price_model.dart';
@@ -80,7 +81,7 @@ class _KpiSliverAppBar extends StatelessWidget {
       forceElevated: true,
       actions: [_ChangeFilterButton(item)],
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 40, bottom: 60),
+        titlePadding: const EdgeInsets.only(left: 40, bottom: 60, right: 40),
         title: Text(
           item.title ?? "",
           style: const TextStyle(color: Colors.white),
@@ -122,7 +123,7 @@ class _ChangeFilterButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 12, top: 12, bottom: 12),
+      padding: const EdgeInsets.only(right: 12, top: 12, bottom: 12, left: 12),
       child: GestureDetector(
         onTap: () {},
         child: Container(
@@ -131,7 +132,7 @@ class _ChangeFilterButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha: 0.2),
                 spreadRadius: 1,
                 blurRadius: 5,
               ),
@@ -139,7 +140,7 @@ class _ChangeFilterButton extends StatelessWidget {
           ),
           padding: const EdgeInsets.all(8),
           child: Text(
-            "Change Filter",
+            S.of(context).change_filter,
             style: TextStyle(
               fontSize: 11,
               color: item.backgroundStart ?? Colors.black,

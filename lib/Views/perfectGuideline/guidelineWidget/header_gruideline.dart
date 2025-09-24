@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/utils/constants/app_font_weight.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
 import 'package:flutter_salesman_module/utils/provider/channel_data_provider.dart';
@@ -22,7 +23,7 @@ class HeaderGuideline extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 0),
       child: Row(
         children: [
-          Container(
+          SizedBox(
             width: productWidth,
             height: 100,
             child: Padding(
@@ -32,7 +33,7 @@ class HeaderGuideline extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Product Availability',
+                    S.of(context).kpi_product,
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.primaryBlack,
@@ -41,7 +42,7 @@ class HeaderGuideline extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   Text(
-                    'Check if these products are availble.',
+                    S.of(context).prd_guideline_header,
                     style: TextStyle(
                       fontSize: 8,
                       color: AppColors.primaryBlack,

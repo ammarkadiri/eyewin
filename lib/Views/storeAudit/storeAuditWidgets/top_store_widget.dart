@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
 import 'package:flutter_salesman_module/components/custom_back_icon.dart';
 import 'package:flutter_salesman_module/components/custom_divider.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/utils/constants/app_assets.dart';
 import 'package:flutter_salesman_module/utils/constants/app_font_family.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
 import 'package:flutter_salesman_module/utils/extentions/nav_extention.dart';
-import 'package:flutter_salesman_module/utils/provider/login_provider.dart';
 import 'package:flutter_salesman_module/utils/route/routes.dart';
-import 'package:provider/provider.dart';
 
 class TopStoreWidget extends StatelessWidget {
   final String customerName;
@@ -39,7 +38,7 @@ class TopStoreWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(17),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       spreadRadius: 1,
                       blurRadius: 5,
                       offset: const Offset(0, 0),
@@ -60,7 +59,7 @@ class TopStoreWidget extends StatelessWidget {
                           context.pushNamed(Routes.perfectGuidelineScreen);
                         },
                         child: Text(
-                          "Perfect Store Guidelines",
+                          S.of(context).perfect_store_guidelines,
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.primaryWhitColor,

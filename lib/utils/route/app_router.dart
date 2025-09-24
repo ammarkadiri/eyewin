@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/Views/kpiDetails/kpi_details_screen.dart';
 import 'package:flutter_salesman_module/Views/perfectGuideline/perfect_guideline_main_screen.dart';
 import 'package:flutter_salesman_module/Views/storeAudit/store_audit_screen.dart';
-import 'package:flutter_salesman_module/Views/takePictureForCategroies/take_picture_main_screen.dart';
 import 'package:flutter_salesman_module/utils/route/routes.dart';
 
 import '../../Views/login/login_screen.dart';
@@ -25,6 +24,9 @@ class AppRouter {
               channelId: arguments['channelId'],
               customerName: arguments['customerName'],
               customerId: arguments['customerId'],
+              customerPicture: arguments['customerPicture'],
+              customer: arguments['customer'],
+              isImageMandatory: arguments['isImageMandatory'],
             ),
           );
         } else {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_salesman_module/utils/constants/colors.dart';
+import 'package:cached_network_image/cached_network_image.dart'; 
 
 class CustomAssetImage extends StatelessWidget {
   final String imagePath;

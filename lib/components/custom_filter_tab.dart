@@ -8,12 +8,12 @@ class CustomFilterTabBar extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   const CustomFilterTabBar({
-    Key? key,
+    super.key,
     required this.tabs,
     required this.controller,
     required this.selectedIndex,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class CustomFilterTabBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),

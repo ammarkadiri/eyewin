@@ -1,20 +1,19 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:flutter_salesman_module/models/upload/mission_upload_model.dart';
+import 'package:flutter_salesman_module/models/upload/mission_server_upload.dart';
 import 'package:flutter_salesman_module/utils/constants/app_url.dart';
 import 'package:http/http.dart' as http;
+import 'dart:developer' as developer;
 
 class UploadApi {
-  static Future<MissionUploadDetails> uploadMissionApi(
+  static Future<MissionUploadServerModel> uploadMissionApi(
     String username,
     String userid,
     String date,
     String token,
-    MissionUploadDetails missionModel,
+    MissionUploadServerModel mission,
   ) async {
     try {
       String uploadUrl = "${AppUrl.uploadMession}?userid=$userid";
-      print("Using URL: $uploadUrl");
 
       final headers = {
         'Content-Type': 'application/json',
@@ -23,51 +22,17 @@ class UploadApi {
         'date': date,
       };
 
-      final body = jsonEncode(missionModel.toJson());
-
-      print("sssssssssssss$body");
-
+      final body = jsonEncode(mission.toJson());
+      developer.log(jsonEncode(mission.toJson()), name: 'MISSION_JSON');
       final response = await http
           .put(Uri.parse(uploadUrl), headers: headers, body: body)
           .timeout(const Duration(minutes: 2));
 
-      print("Response status code: ${response.statusCode}");
-      print("Response body: ${response.body}");
-
-      print("Response status code: ${response.statusCode}");
-      print("Response body: ${response.body}");
-
-      void logJsonPart(String label, List<dynamic>? items) {
-        if (items == null) {
-          debugPrint('⚠️ $label is null');
-          return;
-        }
-        try {
-          final jsonList = items.map((e) => e.toJson()).toList();
-          final encoded = jsonEncode(jsonList);
-          debugPrint('✅ $label JSON: $encoded');
-        } catch (e, stack) {
-          debugPrint('❌ Failed to encode $label: $e');
-          debugPrint('🔍 Stack: $stack');
-        }
-      }
-
-      logJsonPart("Product", missionModel.product);
-      logJsonPart("Price", missionModel.price);
-      logJsonPart("Place", missionModel.place);
-      logJsonPart("Promo", missionModel.promo);
-
-      logJsonPart("Promo", missionModel.photo);
-
       if (response.statusCode == 200) {
         if (response.body.trim().isEmpty) {
-          print("Upload successful, but response body is empty.");
-          return missionModel;
+          return mission;
         } else {
-          final data = MissionUploadDetails.fromJson(
-            json.decode(response.body),
-          );
-          return data;
+          return MissionUploadServerModel.fromJson(json.decode(response.body));
         }
       } else {
         throw Exception(
@@ -75,7 +40,6 @@ class UploadApi {
         );
       }
     } catch (error) {
-      print("Upload Error: $error");
       rethrow;
     }
   }

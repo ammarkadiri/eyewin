@@ -7,6 +7,7 @@ import 'package:flutter_salesman_module/Views/mainScreen/mainWidgets/top_user_ba
 import 'package:flutter_salesman_module/components/custom_button.dart';
 import 'package:flutter_salesman_module/components/custom_divider.dart';
 import 'package:flutter_salesman_module/components/custom_text_field.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/utils/constants/app_assets.dart';
 import 'package:flutter_salesman_module/utils/constants/app_font_family.dart';
 import 'package:flutter_salesman_module/utils/constants/app_text_style.dart';
@@ -118,7 +119,7 @@ class _GuidelinesAndKpis extends StatelessWidget {
                 Expanded(
                   child: Center(
                     child: Text(
-                      'Perfect Store Guidelines',
+                      S.of(context).perfect_store_guidelines,
                       style: TextStyles.buttonTextStyle,
                     ),
                   ),
@@ -157,7 +158,7 @@ class _CustomerSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               child: CustomTextField(
                 label: "",
-                hint: "Search for a customer...",
+                hint: S.of(context).search_customer,
                 controller: searchController,
                 useUnderlineBorder: false,
                 hintTextColor: AppColors.textGreyColor,
@@ -165,6 +166,9 @@ class _CustomerSection extends StatelessWidget {
                 borderRadius: 30,
                 hintTextSize: 14,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                onChanged: (value) {
+                  context.read<ChannelDataProvider>().searchCustomer(value);
+                },
               ),
             ),
             const CustomDivider(
@@ -253,29 +257,10 @@ class _CustomerList extends StatelessWidget {
           );
         }
 
-        final channels = provider.channelData?.channelsData;
-        if (channels == null || channels.isEmpty) {
-          return const Center(child: Text('No channel data found.'));
-        }
+        final customersWithCluster = provider.customersWithCluster;
 
-        final customersWithCluster = <Map<String, dynamic>>[];
-        for (var channel in channels) {
-          final customers = channel.customers ?? [];
-          for (var customer in customers) {
-            customersWithCluster.add({
-              'customer': customer,
-              'cluster': channel.name,
-              'channelId': channel.id,
-              'productFrequency': channel.productKPIFrequency?.toInt(),
-              'priceFrequency': channel.priceKPIFrequency?.toInt(),
-              'placeFrequency': channel.placeKPIFrequency?.toInt(),
-              'promoFrequency': channel.promoKPIFrequency?.toInt(),
-              'ProductMustItems': channel.productMustItems,
-              'PriceMustItems': channel.priceMustItems,
-              'PlaceMustItems': channel.placeMustItems,
-              'PromoMustItems': channel.promoMustItems,
-            });
-          }
+        if (customersWithCluster.isEmpty) {
+          return const Center(child: Text('No channel data found.'));
         }
 
         return RefreshIndicator(
@@ -298,6 +283,11 @@ class _CustomerList extends StatelessWidget {
                 placeMustItem: data['PlaceMustItems'],
                 promoMustItem: data['PromoMustItems'],
                 channelId: data['channelId'],
+                isImageMandatory: data['isImageMandatory'] ?? false,
+                showPlace: data['showPlace'],
+                showPrice: data['showPrice'],
+                showProduct: data['showProduct'],
+                showPromo: data['showPromo'],
               );
             },
           ),
