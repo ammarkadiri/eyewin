@@ -72,11 +72,11 @@ class _SliverListWidgetState extends State<SliverListWidget> {
         final mission = providerProduct.getMission(widget.customerId, userId);
 
         if (mission != null && (mission.product.isEmpty)) {
-          providerProduct.initializeProductList(
+          /* providerProduct.initializeProductList(
             customerId: widget.customerId,
             userId: userId,
             productList: widget.productList!,
-          );
+          );*/
         }
       });
     }
@@ -91,11 +91,11 @@ class _SliverListWidgetState extends State<SliverListWidget> {
         final mission = providerProduct.getMission(widget.customerId, userId);
 
         if (mission != null && (mission.place.isEmpty)) {
-          providerProduct.initializePlaceList(
+          /*  providerProduct.initializePlaceList(
             customerId: widget.customerId,
             userId: userId,
             placeList: widget.placeItem!,
-          );
+          );*/
         }
       });
     }
@@ -110,11 +110,11 @@ class _SliverListWidgetState extends State<SliverListWidget> {
         final mission = providerProduct.getMission(widget.customerId, userId);
 
         if (mission != null && (mission.promo.isEmpty)) {
-          providerProduct.initializePromoList(
+          /* providerProduct.initializePromoList(
             customerId: widget.customerId,
             userId: userId,
             promoList: widget.promoItem!,
-          );
+          );*/
         }
       });
     }

@@ -62,13 +62,13 @@ class CustomerItemWidget extends StatefulWidget {
 class _CustomerItemWidgetState extends State<CustomerItemWidget> {
   @override
   Widget build(BuildContext context) {
+    
     return GestureDetector(
       onTap: () {
         final dateToCheck = widget.customer?.lastVisitDate;
-        print("Last Visit Date: $dateToCheck");
 
         final todayDate = GlobalMethods.isToday(dateToCheck ?? DateTime.now());
-        print("Is Today: $todayDate");
+
         if (dateToCheck != null && todayDate) {
           showTitleSubtitleDialog(
             context: context,
@@ -185,13 +185,26 @@ class _CustomerItemWidgetState extends State<CustomerItemWidget> {
               Consumer<MissionUploadDateProvider>(
                 builder: (context, provider, _) {
                   final utcDate = widget.customer?.lastVisitDate;
+
+                  final isInvalidDate = utcDate == null || utcDate.year == 1;
+
+                  if (isInvalidDate) {
+                    return Text(
+                      S.of(context).not_yet_visited,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primaryBlack,
+                      ),
+                    );
+                  }
+
                   final now = DateTime.now();
                   final timezoneOffset = now.timeZoneOffset;
-                  final localDate = utcDate?.add(timezoneOffset);
+                  final localDate = utcDate.add(timezoneOffset);
 
                   return Text(
                     GlobalMethods.formatTimeAgo(context, localDate),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.primaryBlack,
                     ),

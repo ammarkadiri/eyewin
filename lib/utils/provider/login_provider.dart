@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/utils/extentions/nav_extention.dart';
 import 'package:flutter_salesman_module/utils/route/routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,9 +55,21 @@ class LoginProvider extends ChangeNotifier {
       _error = errorMessage;
 
       _loading = false;
-      final rawError = _error ?? "Unknown error";
-      final message = GlobalMethods.extractErrorMessage(rawError);
-      GlobalMethods.showApiErrorMessage(context, "Error", message);
+
+      String message;
+      if (errorMessage.contains("401")) {
+        message = S.of(context).invalid_credentials;
+        GlobalMethods.showApiErrorMessage(
+          context,
+          S.of(context).login_failed,
+          message,
+        );
+      } else {
+        final rawError = _error ?? "Unknown error";
+        message = GlobalMethods.extractErrorMessage(rawError);
+        GlobalMethods.showApiErrorMessage(context, "Error", message);
+      }
+
       notifyListeners();
       return false;
     }

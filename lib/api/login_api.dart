@@ -31,6 +31,8 @@ class LoginApi {
         final data = UserModel.fromJson(json.decode(response.body));
 
         return data;
+      } else if (response.statusCode == 401) {
+        throw Exception("401: Invalid username or password");
       } else {
         throw Exception(response.body);
       }
@@ -47,15 +49,17 @@ class LoginApi {
   ) async {
     try {
       String loginUrl = "${AppUrl.channelData}?userid=$userId";
-      print("url$loginUrl");
-      print("token$token");
-      print("date$date");
       final headers = {
         'Content-Type': 'application/json',
         'username': username,
         'token': token,
         'date': date,
       };
+
+      print("sssssss$date");
+      print("sssssss$token");
+      print("sssssss$date");
+      print("sssssss$userId");
 
       final response = await http
           .get(Uri.parse(loginUrl), headers: headers)

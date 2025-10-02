@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
 import 'package:flutter_salesman_module/components/custom_button.dart';
 import 'package:flutter_salesman_module/components/custom_text_field.dart';
+import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'dart:async';
 
 import 'package:flutter_salesman_module/models/price_model.dart';
@@ -105,17 +106,16 @@ Future<T?> customBottomSheet<T>(
                                             fontSize: 16,
                                           ),
                                         ),
-                                        if (priceList.minPrice != null &&
-                                            priceList.maxPrice != null)
-                                          Row(
-                                            children: [
-                                              CustomAssetImage(
-                                                imagePath: AppAssets.targetGrey,
-                                                height: 20,
-                                                width: 20,
-                                                fit: BoxFit.cover,
-                                              ),
-                                              SizedBox(width: 10),
+                                        Row(
+                                          children: [
+                                            CustomAssetImage(
+                                              imagePath: AppAssets.targetGrey,
+                                              height: 20,
+                                              width: 20,
+                                              fit: BoxFit.cover,
+                                            ),
+                                            SizedBox(width: 10),
+                                            if (priceList.minPrice != null)
                                               Text(
                                                 GlobalMethods.formatPrice(
                                                   priceList.minPrice ?? 0,
@@ -126,6 +126,8 @@ Future<T?> customBottomSheet<T>(
                                                       AppFontFamily.cairoBold,
                                                 ),
                                               ),
+                                            if (priceList.maxPrice != null &&
+                                                priceList.minPrice != null)
                                               Padding(
                                                 padding:
                                                     const EdgeInsets.symmetric(
@@ -137,6 +139,7 @@ Future<T?> customBottomSheet<T>(
                                                   color: AppColors.primaryBlack,
                                                 ),
                                               ),
+                                            if (priceList.maxPrice != null)
                                               Text(
                                                 GlobalMethods.formatPrice(
                                                   priceList.maxPrice ?? 0,
@@ -147,8 +150,8 @@ Future<T?> customBottomSheet<T>(
                                                       AppFontFamily.cairoBold,
                                                 ),
                                               ),
-                                            ],
-                                          ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -233,6 +236,12 @@ Future<T?> customBottomSheet<T>(
                                         if (minPrice == null &&
                                             maxPrice == null) {
                                           isCorrect = null;
+                                        } else if (minPrice != null &&
+                                            maxPrice == null) {
+                                          isCorrect = shelfPrice == minPrice;
+                                        } else if (minPrice == null &&
+                                            maxPrice != null) {
+                                          isCorrect = shelfPrice == maxPrice;
                                         } else {
                                           isCorrect =
                                               shelfPrice >=
@@ -282,7 +291,7 @@ Future<T?> customBottomSheet<T>(
                                             vertical: 15,
                                           ),
                                           child: Text(
-                                            "Save Price",
+                                            S.of(context).save_price,
                                             style: TextStyle(
                                               color: AppColors.primaryWhitColor,
                                               fontFamily:

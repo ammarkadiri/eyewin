@@ -8,8 +8,10 @@ import 'package:flutter_salesman_module/models/channel_data_model.dart';
 import 'package:flutter_salesman_module/models/customer_model.dart';
 import 'package:flutter_salesman_module/models/guidline_model.dart';
 import 'package:flutter_salesman_module/models/kpi_model.dart';
+import 'package:flutter_salesman_module/models/place_model.dart';
 import 'package:flutter_salesman_module/models/price_model.dart';
 import 'package:flutter_salesman_module/models/product_must_model.dart';
+import 'package:flutter_salesman_module/models/promo_model.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
 import 'package:flutter_salesman_module/utils/provider/channel_data_provider.dart';
 import 'package:intl/intl.dart';
@@ -181,6 +183,47 @@ class GlobalMethods {
     );
   }
 
+  // method to get the products from intialize with out add new
+  /*  static List<ProductMustItem> productsSaved(
+    BuildContext context,
+    int customerId,
+    int dataCollectorUserId,
+    List<ProductMustItem> culsterProducts,
+  ) {
+    final missionProvider = context.read<MissionUpload2Provider>();
+    final mission = missionProvider.getMission(customerId, dataCollectorUserId);
+    final missionProducts = mission?.product ?? [];
+
+    final savedProducts =
+        culsterProducts.where((product) {
+          return missionProducts.any((mp) => mp.id == product.id);
+        }).toList();
+
+    final notInCluster =
+        missionProducts.where((mp) {
+          return !culsterProducts.any((cp) => cp.id == mp.id);
+        }).toList();
+
+    if (notInCluster.isNotEmpty) {
+      debugPrint("⚠️ Removing products in mission but not in cluster:");
+      for (var p in notInCluster) {
+        debugPrint(" - ${p.id} | ${p.categoryName}");
+      }
+ 
+      missionProducts.removeWhere(
+        (mp) => notInCluster.any((nic) => nic.id == mp.id),
+      );
+
+      // Update mission in provider
+      missionProvider.updateMissionProducts(
+        customerId:  customerId,
+       userId:  dataCollectorUserId,
+      newProducts:   missionProducts,
+      );
+    }
+    return savedProducts;
+  }*/
+
   static List<KPIModel> getKpiList(
     int channelId,
     BuildContext context,
@@ -190,6 +233,10 @@ class GlobalMethods {
     bool? showPrice,
     bool? showPlace,
     bool? showPromo,
+    List<ProductMustItem>? matcingProducts,
+    List<PlaceMustItem>? matchingPlaces,
+    List<PromoMustItem>? matchingPromo,
+    List<PriceMustItem>? matchingPrices,
   }) {
     if (matchingChannel == null) return [];
 
@@ -197,7 +244,7 @@ class GlobalMethods {
     List<Guideline> listGuidLinesPlace = [];
     List<KPIModel> listKpi = [];
 
-    for (var promo in matchingChannel.promoMustItems ?? []) {
+    for (var promo in matchingPromo ?? matchingChannel.promoMustItems ?? []) {
       for (var guidlines in promo.guidelines ?? []) {
         listGuidLinesPromo.add(
           Guideline(
@@ -210,7 +257,7 @@ class GlobalMethods {
         );
       }
     }
-    for (var place in matchingChannel.placeMustItems ?? []) {
+    for (var place in matchingPlaces ?? matchingChannel.placeMustItems ?? []) {
       for (var guidlines in place.guidelines ?? []) {
         listGuidLinesPlace.add(
           Guideline(
@@ -224,73 +271,100 @@ class GlobalMethods {
       }
     }
 
-    if (showProduct ??
-        (matchingChannel.productKPIFrequency != null &&
-                matchingChannel.productKPIFrequency! >
-                    customer!.productKPIVisits) &&
-            (matchingChannel.productMustItems != null &&
-                matchingChannel.productMustItems!.isNotEmpty)) {
+    final hasMustItems =
+        matchingChannel.productMustItems != null &&
+        matchingChannel.productMustItems!.isNotEmpty;
+
+    final needsVisit =
+        matchingChannel.productKPIFrequency != null &&
+        customer != null &&
+        matchingChannel.productKPIFrequency! > customer.productKPIVisits;
+
+    if (showProduct == null
+        ? (needsVisit && hasMustItems)
+        : ((showProduct == true) && hasMustItems)) {
       listKpi.add(
         KPIModel(
           title: S.of(context).product,
           backgroundStart: AppColors.colorKPIProduct,
           backgroundMid: AppColors.colorKPIProductLight,
           kpiId: "1",
-          description: matchingChannel.productMustItems!.length.toString(),
+          description:
+              matcingProducts != null
+                  ? matcingProducts.length.toString()
+                  : matchingChannel.productMustItems!.length.toString(),
           showPercentages: false,
         ),
       );
     }
 
-    if (showPrice ??
-        (matchingChannel.priceKPIFrequency != null &&
-                matchingChannel.priceKPIFrequency! >
-                    customer!.priceKPIVisits) &&
-            (matchingChannel.priceMustItems != null &&
-                matchingChannel.priceMustItems!.isNotEmpty)) {
+    final needVisitPrice =
+        matchingChannel.priceKPIFrequency != null &&
+        matchingChannel.priceKPIFrequency! > customer!.priceKPIVisits;
+    final hasMustItemsPrice =
+        matchingChannel.priceMustItems != null &&
+        matchingChannel.priceMustItems!.isNotEmpty;
+
+    if (showPrice == null
+        ? (needVisitPrice && hasMustItemsPrice)
+        : ((showPrice == true) && hasMustItemsPrice)) {
       listKpi.add(
         KPIModel(
           backgroundStart: AppColors.colorKPIPrice,
           backgroundMid: AppColors.colorKPIPriceLight,
           kpiId: "2",
           title: S.of(context).price,
-          description: matchingChannel.priceMustItems!.length.toString(),
+          description:
+              matchingPrices != null
+                  ? matchingPrices.length.toString()
+                  : (matchingChannel.priceMustItems!.length).toString(),
           showPercentages: false,
         ),
       );
     }
 
-    if (showPlace ??
-        (matchingChannel.placeKPIFrequency != null &&
-                matchingChannel.placeKPIFrequency! >
-                    customer!.placeKPIVisits) &&
-            (matchingChannel.placeMustItems != null &&
-                matchingChannel.placeMustItems!.isNotEmpty)) {
+    final needVisitPlace =
+        matchingChannel.placeKPIFrequency != null &&
+        matchingChannel.placeKPIFrequency! > customer!.placeKPIVisits;
+    final hasMustItemsPlace =
+        matchingChannel.placeMustItems != null &&
+        matchingChannel.placeMustItems!.isNotEmpty;
+
+    if (showPlace == null
+        ? (needVisitPlace && hasMustItemsPlace)
+        : ((showPlace == true) && hasMustItemsPlace)) {
       listKpi.add(
         KPIModel(
           backgroundStart: AppColors.colorKPIPlace,
           backgroundMid: AppColors.colorKPIPlaceLight,
           kpiId: '3',
           title: S.of(context).place,
-          description: listGuidLinesPlace.length.toString(),
+          description:
+              (matchingPlaces?.length ?? matchingChannel.placeMustItems!.length)
+                  .toString(),
           showPercentages: false,
         ),
       );
     }
+    final needVisitPromo =
+        matchingChannel.promoKPIFrequency != null &&
+        matchingChannel.promoKPIFrequency! > customer!.promoKPIVisits;
+    final hasMustItemsPromo =
+        matchingChannel.promoMustItems != null &&
+        matchingChannel.promoMustItems!.isNotEmpty;
 
-    if (showPromo ??
-        (matchingChannel.promoKPIFrequency != null &&
-                matchingChannel.promoKPIFrequency! >
-                    customer!.promoKPIVisits) &&
-            (matchingChannel.promoMustItems != null &&
-                matchingChannel.promoMustItems!.isNotEmpty)) {
+    if (showPromo == null
+        ? (needVisitPromo && hasMustItemsPromo)
+        : ((showPromo == true) && hasMustItemsPromo)) {
       listKpi.add(
         KPIModel(
           kpiId: '4',
           title: S.of(context).promo,
           backgroundStart: AppColors.colorKPIPromotion,
           backgroundMid: AppColors.colorKPIPromotionLight,
-          description: listGuidLinesPromo.length.toString(),
+          description:
+              (matchingPromo?.length ?? matchingChannel.promoMustItems!.length)
+                  .toString(),
           showPercentages: false,
         ),
       );

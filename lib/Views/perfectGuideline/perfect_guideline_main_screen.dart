@@ -139,7 +139,9 @@ class _PerfectGuidelineMainScreenState extends State<PerfectGuidelineMainScreen>
                         onTap: (index) async {
                           tabIndexProvider.changeIndex(context, index);
                           context.read<LoaderProvider>().show('list');
-                          await Future.delayed(const Duration(seconds: 2));
+                          await Future.delayed(
+                            const Duration(milliseconds: 500),
+                          );
                           context.read<LoaderProvider>().hide('list');
                         },
                       ),

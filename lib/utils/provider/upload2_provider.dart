@@ -40,9 +40,6 @@ class MissionUpload2Provider extends ChangeNotifier {
       await box.write('missions', jsonList);
 
       debugPrint('💾 Saved ${jsonList.length} missions to storage');
-      for (var mission in _missions.values) {
-        debugPrint('✅ Mission saved: ${mission.toJson()}');
-      }
     } catch (e) {
       debugPrint('❌ Error saving missions: $e');
     }
@@ -62,9 +59,6 @@ class MissionUpload2Provider extends ChangeNotifier {
       for (var mission in missions) {
         final key = _key(mission.customerId, mission.dataCollectorUserId);
         _missions[key] = mission;
-
-        // 👇 Print each mission details
-        debugPrint('✅ Loaded mission: ${mission.toJson()}');
       }
 
       debugPrint('📦 Total missions loaded: ${_missions.length}');
@@ -112,10 +106,14 @@ class MissionUpload2Provider extends ChangeNotifier {
   Future<void> initializeMission({
     required int customerId,
     required int userId,
-
     String? customerNameByDC,
     String? visitDate,
     String? customerLongByDC,
+    List<PlaceMustItem>? placeItem,
+    List<PromoMustItem>? promoItem,
+    List<ProductMustItem>? productList,
+
+    List<PriceMustItem>? priceList,
     String? customerLatByDC,
     String? customerPictureByDC,
     bool? showProduct,
@@ -125,6 +123,85 @@ class MissionUpload2Provider extends ChangeNotifier {
   }) async {
     final key = _key(customerId, userId);
 
+    debugPrint(
+      '🔄 Deep copying place items for customer $customerId to avoid shared state',
+    );
+    final copiedPlaceItems =
+        placeItem?.map((place) {
+          final copiedGuidelines =
+              place.guidelines
+                  ?.map((guideline) {
+                    if (guideline == null) return null;
+                    return Guideline(
+                      id: guideline.id,
+                      description: guideline.description,
+                      guidelineId: guideline.guidelineId,
+                      pdf: guideline.pdf,
+                      thumbnail: guideline.thumbnail,
+                      groupThumbnail: guideline.groupThumbnail,
+                      isCompetition: guideline.isCompetition,
+                      channelId: guideline.channelId,
+                      channelName: guideline.channelName,
+                      groupId: guideline.groupId,
+                      groupName: guideline.groupName,
+                      abidedBy: null,
+                      dataCollectorUserId: null,
+                      visitDate: null,
+                    );
+                  })
+                  .toList()
+                  .cast<Guideline?>();
+
+          return PlaceMustItem(
+            groupId: place.groupId,
+            categoryId: place.categoryId,
+            categoryName: place.categoryName,
+            name: place.name,
+            thumbnail: place.thumbnail,
+            isCompetition: place.isCompetition,
+            guidelines: copiedGuidelines,
+          );
+        }).toList() ??
+        [];
+
+    // Deep copy promo items to avoid shared state between customers
+    debugPrint(
+      '🔄 Deep copying promo items for customer $customerId to avoid shared state',
+    );
+    final copiedPromoItems =
+        promoItem?.map((promo) {
+          final copiedGuidelines =
+              promo.guidelines?.map((guideline) {
+                return Guideline(
+                  id: guideline.id,
+                  description: guideline.description,
+                  guidelineId: guideline.guidelineId,
+                  pdf: guideline.pdf,
+                  thumbnail: guideline.thumbnail,
+                  groupThumbnail: guideline.groupThumbnail,
+                  isCompetition: guideline.isCompetition,
+                  channelId: guideline.channelId,
+                  channelName: guideline.channelName,
+                  groupId: guideline.groupId,
+                  groupName: guideline.groupName,
+                  abidedBy: null, // Reset selection state for each customer
+                  dataCollectorUserId: null,
+                  visitDate: null,
+                );
+              }).toList();
+
+          return PromoMustItem(
+            groupId: promo.groupId,
+            categoryId: promo.categoryId,
+            categoryName: promo.categoryName,
+            name: promo.name,
+            thumbnail: promo.thumbnail,
+            isCompetition: promo.isCompetition,
+            guidelines: copiedGuidelines,
+          );
+        }).toList() ??
+        [];
+
     final mission = MissionUploadDetails(
       customerId: customerId,
       dataCollectorUserId: userId,
@@ -133,17 +210,17 @@ class MissionUpload2Provider extends ChangeNotifier {
       showProduct: showProduct ?? false,
       showPromo: showPromo ?? false,
       visitDate: '',
-      price: [],
+      price: priceList ?? [],
       priceScore: '',
       priceScoreCompetition: '',
-      place: [],
+      place: copiedPlaceItems,
       placeScore: '',
       placeScoreCompetition: '',
-      promo: [],
+      promo: copiedPromoItems,
       promoScore: '',
       promoScoreCompetition: '',
 
-      product: [],
+      product: productList ?? [],
       productScore: '',
       productScoreCompetition: '',
 
@@ -167,6 +244,236 @@ class MissionUpload2Provider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateMission({
+    required int customerId,
+    required int userId,
+    required List<ProductMustItem> clustProducts,
+    required List<PlaceMustItem> clustPlaces,
+    required List<PromoMustItem> clustPromo,
+    required List<PriceMustItem> clustPrice,
+  }) async {
+    final key = _key(customerId, userId);
+    final mission = _missions[key];
+
+    if (mission == null) {
+      debugPrint("⚠️ No mission found for $customerId - $userId");
+      return;
+    }
+
+    bool hasChanged = false;
+
+    // ---------------- PRODUCTS ----------------
+    final notInClusterProducts =
+        mission.product
+            .where((mp) => !clustProducts.any((cp) => cp.id == mp.id))
+            .toList();
+
+    if (notInClusterProducts.isNotEmpty) {
+      debugPrint("⚠️ Products in mission but not in cluster:");
+      for (var p in notInClusterProducts) {
+        debugPrint(" - ${p.id} | ${p.brandName} ----- ${p.available}");
+      }
+
+      final updatedProducts =
+          mission.product
+              .where(
+                (mp) => !notInClusterProducts.any((nic) => nic.id == mp.id),
+              )
+              .toList();
+
+      _missions[key] = mission.copyWith(product: updatedProducts);
+      updateProductScores(customerId: customerId, userId: userId);
+      debugPrint(
+        "✅ Removed ${notInClusterProducts.length} products from mission.",
+      );
+      hasChanged = true;
+
+      // Update showProduct to false if product list is now empty
+      if (updatedProducts.isEmpty) {
+        _missions[key] = _missions[key]!.copyWith(showProduct: false);
+        debugPrint("✅ Set showProduct to false - no product items remaining.");
+      }
+    } else {
+      debugPrint("✅ All mission products exist in cluster.");
+    }
+
+    // ---------------- PRICES ----------------
+    final notInClusterPrices =
+        mission.price
+            .where((mp) => !clustPrice.any((cp) => cp.id == mp.id))
+            .toList();
+
+    if (notInClusterPrices.isNotEmpty) {
+      debugPrint("⚠️ Prices in mission but not in cluster:");
+      for (var p in notInClusterPrices) {
+        debugPrint(" - ${p.id} | ${p.brandName}");
+      }
+
+      final updatedPrices =
+          mission.price
+              .where((mp) => !notInClusterPrices.any((nic) => nic.id == mp.id))
+              .toList();
+
+      _missions[key] = _missions[key]!.copyWith(price: updatedPrices);
+      updatePriceScores(customerId: customerId, userId: userId);
+      debugPrint("✅ Removed ${notInClusterPrices.length} prices from mission.");
+      hasChanged = true;
+
+      // Update showPrice to false if price list is now empty
+      if (updatedPrices.isEmpty) {
+        _missions[key] = _missions[key]!.copyWith(showPrice: false);
+        debugPrint("✅ Set showPrice to false - no price items remaining.");
+      }
+    } else {
+      debugPrint("✅ All mission prices exist in cluster.");
+    }
+
+    // ---------------- PLACES ----------------
+    final notInClusterPlaces =
+        mission.place
+            .where((mp) => !clustPlaces.any((cp) => cp.groupId == mp.groupId))
+            .toList();
+
+    if (notInClusterPlaces.isNotEmpty) {
+      debugPrint("⚠️ Places in mission but not in cluster:");
+      for (var p in notInClusterPlaces) {
+        debugPrint(" - ${p.groupId} | ${p.categoryName}");
+      }
+
+      final updatedPlaces =
+          mission.place
+              .where(
+                (mp) =>
+                    !notInClusterPlaces.any((nic) => nic.groupId == mp.groupId),
+              )
+              .toList();
+
+      _missions[key] = _missions[key]!.copyWith(place: updatedPlaces);
+      updatePlaceScores(customerId: customerId, userId: userId);
+      debugPrint("✅ Removed ${notInClusterPlaces.length} places from mission.");
+      hasChanged = true;
+
+      // Update showPlace to false if place list is now empty
+      if (updatedPlaces.isEmpty) {
+        _missions[key] = _missions[key]!.copyWith(showPlace: false);
+        debugPrint("✅ Set showPlace to false - no place items remaining.");
+      }
+    } else {
+      debugPrint("✅ All mission places exist in cluster.");
+    }
+
+    // Guidelines inside each place
+    final updatedPlacesWithGuidelines =
+        _missions[key]!.place.map((mp) {
+          final clusterPlace = clustPlaces.firstWhere(
+            (cp) => cp.groupId == mp.groupId,
+            orElse: () => PlaceMustItem(),
+          );
+
+          final updatedGuidelines =
+              mp.guidelines
+                  ?.where(
+                    (g) =>
+                        clusterPlace.guidelines?.any(
+                          (cg) => cg?.id != null && cg!.id == g?.id,
+                        ) ??
+                        false,
+                  )
+                  .toList() ??
+              [];
+
+          if (updatedGuidelines.length != (mp.guidelines?.length ?? 0)) {
+            debugPrint(
+              "⚠️ Removed ${mp.guidelines!.length - updatedGuidelines.length} guidelines from place ${mp.groupId}",
+            );
+            hasChanged = true;
+          }
+
+          return mp.copyWith(guidelines: updatedGuidelines);
+        }).toList();
+
+    _missions[key] = _missions[key]!.copyWith(
+      place: updatedPlacesWithGuidelines,
+    );
+
+    // ---------------- PROMO ----------------
+    final notInClusterPromo =
+        mission.promo
+            .where((mp) => !clustPromo.any((cp) => cp.groupId == mp.groupId))
+            .toList();
+
+    if (notInClusterPromo.isNotEmpty) {
+      debugPrint("⚠️ Promo in mission but not in cluster:");
+      for (var p in notInClusterPromo) {
+        debugPrint(" - ${p.groupId} | ${p.categoryName}");
+      }
+
+      final updatedPromo =
+          mission.promo
+              .where(
+                (mp) =>
+                    !notInClusterPromo.any((nic) => nic.groupId == mp.groupId),
+              )
+              .toList();
+
+      _missions[key] = _missions[key]!.copyWith(promo: updatedPromo);
+      updatePromoScores(customerId: customerId, userId: userId);
+      debugPrint("✅ Removed ${notInClusterPromo.length} promos from mission.");
+      hasChanged = true;
+
+      // Update showPromo to false if promo list is now empty
+      if (updatedPromo.isEmpty) {
+        _missions[key] = _missions[key]!.copyWith(showPromo: false);
+        debugPrint("✅ Set showPromo to false - no promo items remaining.");
+      }
+    } else {
+      debugPrint("✅ All mission promos exist in cluster.");
+    }
+
+    // Guidelines inside each promo
+    final updatedPromoWithGuidelines =
+        _missions[key]!.promo.map((mp) {
+          final clusterPromo = clustPromo.firstWhere(
+            (cp) => cp.groupId == mp.groupId,
+            orElse: () => PromoMustItem(),
+          );
+
+          final updatedGuidelines =
+              mp.guidelines
+                  ?.where(
+                    (g) =>
+                        clusterPromo.guidelines?.any(
+                          (cg) => cg.id != null && cg.id == g.id,
+                        ) ??
+                        false,
+                  )
+                  .toList() ??
+              [];
+
+          if (updatedGuidelines.length != (mp.guidelines?.length ?? 0)) {
+            debugPrint(
+              "⚠️ Removed ${mp.guidelines!.length - updatedGuidelines.length} guidelines from promo ${mp.groupId}",
+            );
+            hasChanged = true;
+          }
+
+          return mp.copyWith(guidelines: updatedGuidelines);
+        }).toList();
+
+    _missions[key] = _missions[key]!.copyWith(
+      promo: updatedPromoWithGuidelines,
+    );
+
+    // ---------------- SAVE ONLY IF CHANGED ----------------
+    if (hasChanged) {
+      await saveMissionsToStorage();
+      notifyListeners();
+      debugPrint("💾 Mission updated & saved for $customerId - $userId");
+    } else {
+      debugPrint("👌 No changes detected, mission not saved.");
+    }
+  }
+
   //----------------------------------------------------------Start of Products Methods---------------------------------
   void initializeProductList({
     required int customerId,
@@ -177,7 +484,10 @@ class MissionUpload2Provider extends ChangeNotifier {
     final mission = _missions[key];
 
     if (mission != null) {
-      _missions[key] = mission.copyWith(product: productList);
+      _missions[key] = mission.copyWith(
+        product: productList,
+        showProduct: productList.isNotEmpty,
+      );
       notifyListeners();
     }
   }
@@ -500,6 +810,14 @@ class MissionUpload2Provider extends ChangeNotifier {
     final key = _key(customerId, userId);
     final mission = _missions[key];
     if (mission == null) return 0;
+
+    // Check if all price items have hasIssue and collectPrice as null
+    final allNull = mission.price.every(
+      (price) => price.hasIssue == null && price.price == null,
+    );
+
+    if (allNull) return 0;
+
     final priceLength = mission.price.length;
     return priceLength;
   }
@@ -515,7 +833,10 @@ class MissionUpload2Provider extends ChangeNotifier {
     final mission = _missions[key];
 
     if (mission != null) {
-      _missions[key] = mission.copyWith(place: placeList);
+      _missions[key] = mission.copyWith(
+        place: placeList,
+        showPlace: placeList.isNotEmpty,
+      );
       notifyListeners();
     } else {
       debugPrint('❌ Mission not found for $customerId - $userId');
@@ -560,22 +881,45 @@ class MissionUpload2Provider extends ChangeNotifier {
   bool isPlaceCompletedFromMission({
     required int customerId,
     required int userId,
+    List<PlaceMustItem>? currentChannelPlaces,
   }) {
     final key = _key(customerId, userId);
     final mission = _missions[key];
 
     if (mission == null) return false;
 
-    final allGuidelines =
+    // Get all guidelines from originally initialized place items
+    final allInitializedGuidelines =
         mission.place
             .expand((item) => item.guidelines ?? [])
             .where((g) => g != null)
             .cast<Guideline>()
             .toList();
 
-    if (allGuidelines.isEmpty) return false;
+    if (allInitializedGuidelines.isEmpty) return false;
 
-    final allSelected = allGuidelines.every((g) => g.abidedBy != null);
+    // If current channel places are provided, filter out disabled items
+    List<Guideline> guidelinesToCheck = allInitializedGuidelines;
+
+    if (currentChannelPlaces != null) {
+      // Get groupIds that are still available in current channel data
+      final availableGroupIds =
+          currentChannelPlaces.map((p) => p.groupId).toSet();
+
+      // Only check guidelines from place items that are still available
+      guidelinesToCheck =
+          mission.place
+              .where((item) => availableGroupIds.contains(item.groupId))
+              .expand((item) => item.guidelines ?? [])
+              .where((g) => g != null)
+              .cast<Guideline>()
+              .toList();
+    }
+
+    if (guidelinesToCheck.isEmpty) return false;
+
+    // Check if all available guidelines have been selected
+    final allSelected = guidelinesToCheck.every((g) => g.abidedBy != null);
 
     return allSelected;
   }
@@ -676,7 +1020,10 @@ class MissionUpload2Provider extends ChangeNotifier {
     final mission = _missions[key];
 
     if (mission != null) {
-      _missions[key] = mission.copyWith(promo: promoList);
+      _missions[key] = mission.copyWith(
+        promo: promoList,
+        showPromo: promoList.isNotEmpty,
+      );
       notifyListeners();
     } else {}
   }
@@ -716,22 +1063,45 @@ class MissionUpload2Provider extends ChangeNotifier {
   bool isPromoCompletedFromMission({
     required int customerId,
     required int userId,
+    List<PromoMustItem>? currentChannelPromos,
   }) {
     final key = _key(customerId, userId);
     final mission = _missions[key];
 
     if (mission == null) return false;
 
-    final allGuidelines =
+    // Get all guidelines from originally initialized promo items
+    final allInitializedGuidelines =
         mission.promo
             .expand((item) => item.guidelines ?? [])
             .where((g) => g != null)
             .cast<Guideline>()
             .toList();
 
-    if (allGuidelines.isEmpty) return false;
+    if (allInitializedGuidelines.isEmpty) return false;
 
-    final allSelected = allGuidelines.every((g) => g.abidedBy != null);
+    // If current channel promos are provided, filter out disabled items
+    List<Guideline> guidelinesToCheck = allInitializedGuidelines;
+
+    if (currentChannelPromos != null) {
+      // Get groupIds that are still available in current channel data
+      final availableGroupIds =
+          currentChannelPromos.map((p) => p.groupId).toSet();
+
+      // Only check guidelines from promo items that are still available
+      guidelinesToCheck =
+          mission.promo
+              .where((item) => availableGroupIds.contains(item.groupId))
+              .expand((item) => item.guidelines ?? [])
+              .where((g) => g != null)
+              .cast<Guideline>()
+              .toList();
+    }
+
+    if (guidelinesToCheck.isEmpty) return false;
+
+    // Check if all available guidelines have been selected
+    final allSelected = guidelinesToCheck.every((g) => g.abidedBy != null);
 
     return allSelected;
   }

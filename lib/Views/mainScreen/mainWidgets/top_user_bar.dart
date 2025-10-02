@@ -59,7 +59,11 @@ class TopUserBar extends StatelessWidget {
           SizedBox(
             width: 30,
             child: IconButton(
-              icon: const Icon(Icons.more_vert, color: Colors.black, size: 26),
+              icon: const Icon(
+                Icons.logout_outlined,
+                color: Colors.black,
+                size: 26,
+              ),
               onPressed: () {
                 loginProvider.logout(context);
               },

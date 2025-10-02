@@ -41,7 +41,6 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
     final missionProvider2 = context.read<MissionUpload2Provider>();
     final loginProvider = context.read<LoginProvider>();
 
-    // 🔹 Check image limit
     final images = missionProvider2.getImagesByCustomerCategoryGroup(
       customerId: widget.customerId,
       categoryId: categoryId,
@@ -262,12 +261,12 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
               return Column(
                 children: [
                   _buildGroupSection(
-                    title: "Secondary Displays",
+                    title: S.of(context).secondary_displays,
                     categories: widget.categories,
                     topPadding: 0,
                   ),
                   _buildGroupSection(
-                    title: "Primary Displays",
+                    title: S.of(context).primary_displays,
                     categories: widget.categories,
                     topPadding: 20,
                   ),
@@ -477,7 +476,7 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "Not Available",
+              S.of(context).not_available,
               style: TextStyle(
                 color: AppColors.lightGrey2Color,
                 fontFamily: AppFontFamily.cairoBold,
@@ -536,7 +535,7 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "Not Available",
+              S.of(context).not_available,
               style: TextStyle(
                 color: AppColors.lightGrey2Color,
                 fontFamily: AppFontFamily.cairoBold,

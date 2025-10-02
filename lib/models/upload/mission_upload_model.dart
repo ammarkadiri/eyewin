@@ -100,7 +100,7 @@ class MissionUploadDetails {
           [],
       priceScore: json['PriceScore'] ?? '',
       priceScoreCompetition: json['PriceScoreCompetition'] ?? '',
-      showPrice: json['ShowPrice'] ?? true,
+      showPrice: json['ShowPrice'] ?? false,
       place:
           (json['Place'] as List<dynamic>?)
               ?.map((e) => PlaceMustItem.fromJson(e))
@@ -108,7 +108,7 @@ class MissionUploadDetails {
           [],
       placeScore: json['PlaceScore'] ?? '',
       placeScoreCompetition: json['PlaceScoreCompetition'] ?? '',
-      showPlace: json['ShowPlace'] ?? true,
+      showPlace: json['ShowPlace'] ?? false,
       promo:
           (json['Promo'] as List<dynamic>?)
               ?.map((e) => PromoMustItem.fromJson(e))
@@ -116,7 +116,7 @@ class MissionUploadDetails {
           [],
       promoScore: json['PromoScore'] ?? '',
       promoScoreCompetition: json['PromoScoreCompetition'] ?? '',
-      showPromo: json['ShowPromo'] ?? true,
+      showPromo: json['ShowPromo'] ?? false,
       product:
           (json['Product'] as List<dynamic>?)
               ?.map((e) => ProductMustItem.fromJson(e))
@@ -124,7 +124,7 @@ class MissionUploadDetails {
           [],
       productScore: json['ProductScore'] ?? '',
       productScoreCompetition: json['productScoreCompetition'],
-      showProduct: json['ShowProduct'] ?? true,
+      showProduct: json['ShowProduct'] ?? false,
       photo:
           (json['Photo'] as List<dynamic>?)
               ?.map((e) => PhotoUpload.fromJson(e))
@@ -227,15 +227,19 @@ extension MissionUploadDetailsCopy on MissionUploadDetails {
     List<ProductMustItem>? product,
     String? productScore,
     String? productScoreCompetition,
+    bool? showProduct,
     List<PriceMustItem>? price,
     String? priceScore,
     String? priceScoreCompetition,
+    bool? showPrice,
     List<PlaceMustItem>? place,
     String? placeScore,
     String? placeScoreCompetition,
+    bool? showPlace,
     List<PromoMustItem>? promo,
     String? promoScore,
     String? promoScoreCompetition,
+    bool? showPromo,
     List<PhotoUpload>? photo,
     List<WatchoutUpload>? watchOut,
     List<GenericQuestionUpload>? genericQuestionsData,
@@ -263,18 +267,22 @@ extension MissionUploadDetailsCopy on MissionUploadDetails {
       priceScore: priceScore ?? this.priceScore,
       priceScoreCompetition:
           priceScoreCompetition ?? this.priceScoreCompetition,
+      showPrice: showPrice ?? this.showPrice,
       place: place ?? this.place,
       placeScore: placeScore ?? this.placeScore,
       placeScoreCompetition:
           placeScoreCompetition ?? this.placeScoreCompetition,
+      showPlace: showPlace ?? this.showPlace,
       promo: promo ?? this.promo,
       promoScore: promoScore ?? this.promoScore,
       promoScoreCompetition:
           promoScoreCompetition ?? this.promoScoreCompetition,
+      showPromo: showPromo ?? this.showPromo,
       product: product ?? this.product,
       productScore: productScore ?? this.productScore,
       productScoreCompetition:
           productScoreCompetition ?? this.productScoreCompetition,
+      showProduct: showProduct ?? this.showProduct,
       photo: photo ?? this.photo,
       watchOut: watchOut ?? this.watchOut,
       genericQuestionsData: genericQuestionsData ?? this.genericQuestionsData,

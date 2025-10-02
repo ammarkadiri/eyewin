@@ -56,4 +56,29 @@ class PromoMustItem {
       'Guidelines': guidelines?.map((e) => e.toJson()).toList(),
     };
   }
+
+  // ---------- copyWith ----------
+  PromoMustItem copyWith({
+    int? groupId,
+    String? name,
+    DateTime? expiryDate,
+    int? categoryId,
+    String? categoryName,
+    String? thumbnail,
+    String? pdf,
+    bool? isCompetition,
+    List<Guideline>? guidelines,
+  }) {
+    return PromoMustItem(
+      groupId: groupId ?? this.groupId,
+      name: name ?? this.name,
+      expiryDate: expiryDate ?? this.expiryDate,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      thumbnail: thumbnail ?? this.thumbnail,
+      pdf: pdf ?? this.pdf,
+      isCompetition: isCompetition ?? this.isCompetition,
+      guidelines: guidelines ?? this.guidelines,
+    );
+  }
 }

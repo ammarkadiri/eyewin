@@ -10,7 +10,7 @@ class TopBarGuideline extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(child: CustomBackIcon()),
+        CustomBackIcon(),
         Expanded(
           child: GestureDetector(
             onTap: () {

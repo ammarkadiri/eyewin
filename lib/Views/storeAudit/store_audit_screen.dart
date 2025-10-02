@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_salesman_module/Views/kpiDetails/kpi_details_screen.dart';
 import 'package:flutter_salesman_module/Views/storeAudit/storeAuditWidgets/kpi_container.dart';
 import 'package:flutter_salesman_module/Views/storeAudit/storeAuditWidgets/top_store_widget.dart';
-import 'package:flutter_salesman_module/Views/takePictureForCategroies/take_picture_main_screen.dart';
 import 'package:flutter_salesman_module/api/upload_api.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
 import 'package:flutter_salesman_module/components/custom_button.dart';
@@ -22,9 +21,7 @@ import 'package:flutter_salesman_module/utils/provider/upload_mission_date.dart'
 import 'package:flutter_salesman_module/utils/provider/channel_data_provider.dart';
 import 'package:flutter_salesman_module/utils/services/buttonPresses/mission_complete_button.dart';
 import 'package:flutter_salesman_module/utils/services/global_methods.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart';
 
 class StoreAuditScreen extends StatefulWidget {
   final int channelId;
@@ -51,6 +48,7 @@ class StoreAuditScreen extends StatefulWidget {
 class _StoreAuditScreenState extends State<StoreAuditScreen> {
   List<KPIModel> kpiList = [];
   ChannelsData? matchingChannel;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -61,44 +59,10 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       GlobalMethods.checkBatteryLevel(context);
       _initializeMission();
-      /* final loginProvider = context.read<LoginProvider>();
-
-      final customerId = widget.customerId;
-      final dataCollectorUserId = loginProvider.user!.userId!;
-      final visitDate = DateTime.now().toUtc().toIso8601String();
-      final coords = _requestLocationPermission(
-        customerId: widget.customerId,
-        provider: MissionUpload2Provider(),
-        userId: dataCollectorUserId,
-      );
-      final missionProvider2 = context.read<MissionUpload2Provider>();
-      if (missionProvider2.getMission(
-            customerId,
-            loginProvider.user!.userId ?? 0,
-          ) ==
-          null) {
-        missionProvider2.initializeMission(
-          customerId: customerId,
-          userId: dataCollectorUserId,
-          visitDate: visitDate,
-          customerLatByDC: coords['latitude'],
-          customerLongByDC: coords['longitude'],
-        );
-      }*/
     });
   }
-  /*
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    kpiList = GlobalMethods.getKpiList(
-      widget.channelId,
-      context,
-      matchingChannel,
-      widget.customer,
-    );
-  }*/
 
+  // List<ProductMustItem> listOfProducts = [];
   Future<void> _initializeMission() async {
     final loginProvider = context.read<LoginProvider>();
     final missionProvider = context.read<MissionUpload2Provider>();
@@ -106,11 +70,6 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
     final customerId = widget.customerId;
     final dataCollectorUserId = loginProvider.user!.userId!;
 
-    final coords = await _requestLocationPermission(
-      customerId: customerId,
-      provider: missionProvider,
-      userId: dataCollectorUserId,
-    );
     final mission = missionProvider.getMission(
       widget.customerId,
       dataCollectorUserId,
@@ -126,6 +85,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
       final hasKpiId2 = kpiList.any((kpi) => kpi.kpiId == '2');
       final hasKpiId3 = kpiList.any((kpi) => kpi.kpiId == '3');
       final hasKpiId4 = kpiList.any((kpi) => kpi.kpiId == '4');
+
       missionProvider.initializeMission(
         customerId: customerId,
         userId: dataCollectorUserId,
@@ -133,15 +93,28 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
         showPrice: hasKpiId2,
         showPlace: hasKpiId3,
         showPromo: hasKpiId4,
-
-        //  customerLatByDC: coords!['latitude'].toString(),
-        //customerLongByDC: coords['longitude'].toString(),
         customerNameByDC: widget.customerName,
         customerPictureByDC: widget.customerPicture,
+        placeItem: matchingChannel!.placeMustItems ?? [],
+        productList: matchingChannel!.productMustItems ?? [],
+        promoItem: matchingChannel!.promoMustItems ?? [],
+        priceList: matchingChannel!.priceMustItems ?? [],
       );
     } else {
+      missionProvider.updateMission(
+        clustProducts: matchingChannel!.productMustItems ?? [],
+        clustPlaces: matchingChannel!.placeMustItems ?? [],
+        clustPromo: matchingChannel!.promoMustItems ?? [],
+        clustPrice: matchingChannel!.priceMustItems ?? [],
+        customerId: customerId,
+        userId: dataCollectorUserId,
+      );
       kpiList = GlobalMethods.getKpiList(
         widget.channelId,
+        matcingProducts: mission.product,
+        matchingPlaces: mission.place,
+        matchingPromo: mission.promo,
+        matchingPrices: mission.price,
         context,
         matchingChannel,
         widget.customer,
@@ -152,33 +125,13 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
       );
       setState(() {});
     }
-  }
 
-  Future<Map<String, double>?> _requestLocationPermission({
-    required int customerId,
-    required int userId,
-    required MissionUpload2Provider provider,
-  }) async {
-    final status = await Permission.location.status;
-
-    if (!status.isGranted) {
-      final result = await Permission.location.request();
-
-      if (!result.isGranted) {
-        return null;
-      }
+    // Hide loader after initialization is complete
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
-
-    final locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 0,
-    );
-
-    final position = await Geolocator.getCurrentPosition(
-      locationSettings: locationSettings,
-    );
-
-    return {'latitude': position.latitude, 'longitude': position.longitude};
   }
 
   @override
@@ -188,13 +141,37 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
     final userId = loginProvider.user!.userId ?? 0;
     final categories = matchingChannel?.categories ?? [];
 
+    // Rebuild KPI list when mission changes
+    final currentMission = missionProvider.getMission(
+      widget.customerId,
+      userId,
+    );
+    if (currentMission != null) {
+      kpiList = GlobalMethods.getKpiList(
+        widget.channelId,
+        matcingProducts: currentMission.product,
+        matchingPlaces: currentMission.place,
+        matchingPromo: currentMission.promo,
+        matchingPrices: currentMission.price,
+        context,
+        matchingChannel,
+        widget.customer,
+        showProduct: currentMission.showProduct,
+        showPrice: currentMission.showPrice,
+        showPlace: currentMission.showPlace,
+        showPromo: currentMission.showPromo,
+      );
+    }
+
     final isCompletedPromo = missionProvider.isPromoCompletedFromMission(
       customerId: widget.customerId,
       userId: userId,
+      currentChannelPromos: matchingChannel?.promoMustItems,
     );
     final isCompletedPlace = missionProvider.isPlaceCompletedFromMission(
       customerId: widget.customerId,
       userId: loginProvider.user!.userId ?? 0,
+      currentChannelPlaces: matchingChannel?.placeMustItems,
     );
     final isCompletedPrice =
         missionProvider.getSelectionCount(widget.customerId, userId) > 0;
@@ -214,7 +191,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
     );
 
     final mission = missionProvider.getMission(widget.customerId, userId);
-    if (mission == null) {
+    if (mission == null || _isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     final showProduct = mission.showProduct ? isDone : null;
@@ -223,7 +200,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
     final showPromo = mission.showPromo ? isCompletedPromo : null;
     final showCategoryImages =
         (widget.isImageMandatory &&
-            (imageCount + unAvImages.length) == (categories.length * 2)) ||
+            (imageCount + unAvImages.length) >= (categories.length * 2)) ||
         (!widget.isImageMandatory);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -276,11 +253,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
                                           try {
                                             final date =
                                                 GlobalMethods.getFormattedGmtDate();
-                                            final mission = missionProvider
-                                                .getMission(
-                                                  widget.customerId,
-                                                  userId,
-                                                );
+
                                             final missionServ =
                                                 missionServerProvider
                                                     .getMission(
@@ -343,7 +316,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
                                                     MissionUploadDateProvider
                                                   >()
                                                   .setUploadDateForCustomer(
-                                                    mission!.customerId,
+                                                    mission.customerId,
                                                     DateTime.tryParse(
                                                       mission.timeOut!,
                                                     )!,
@@ -357,7 +330,6 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
                                             }
                                           } catch (e) {
                                             debugPrint('Upload error: $e');
-                                            // Show error message to user
                                             ScaffoldMessenger.of(
                                               context,
                                             ).showSnackBar(
@@ -420,13 +392,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
                                         )
                                         : _buildCardRow(
                                           "",
-                                          missionProvider
-                                                      .getMission(
-                                                        widget.customerId,
-                                                        userId,
-                                                      )!
-                                                      .totalScore !=
-                                                  null
+                                          mission.totalScore != null
                                               ? S
                                                   .of(context)
                                                   .upload_your_mission
@@ -481,16 +447,9 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
     );
   }
 
-  Widget _buildWatchoutCard() {
+  /* Widget _buildWatchoutCard() {
     return CustomContainer(
       onTap: () {
-        print("Generic Questions Clicked");
-        print("ssssssssssssss${widget.customerName}");
-        print("place${widget.customer!.placeKPIVisits}");
-        print("price${widget.customer!.priceKPIVisits}");
-        print("promo${widget.customer!.promoKPIVisits}");
-        print("prod${widget.customer!.productKPIVisits}");
-        print("isImageMandatory${widget.isImageMandatory}");
       },
       height: 70,
       borderRadius: 15,
@@ -509,13 +468,6 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
       padding: const EdgeInsets.only(top: 20),
       child: CustomContainer(
         onTap: () {
-          print("Generic Questions Clicked");
-          print("ssssssssssssss${widget.customerName}");
-          print("place${widget.customer!.placeKPIVisits}");
-          print("price${widget.customer!.priceKPIVisits}");
-          print("promo${widget.customer!.promoKPIVisits}");
-          print("prod${widget.customer!.productKPIVisits}");
-          print("isImageMandatory${widget.isImageMandatory}");
         },
         height: 70,
         borderRadius: 15,
@@ -531,7 +483,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
         ),
       ),
     );
-  }
+  }*/
 
   Widget _buildCameraCard(List<CategoryList> categories) {
     final loginProvider = context.read<LoginProvider>();
@@ -540,10 +492,9 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
       customerId: widget.customerId,
       userId: loginProvider.user!.userId ?? 0,
     );
-
     final displayText =
         imageCount > 0
-            ? '$imageCount Picture${imageCount > 1 ? 's' : ''} Taken'
+            ? '$imageCount ${imageCount > 1 ? S.of(context).pictures_taken : S.of(context).picture_taken}'
             : S.of(context).take_pictures;
     return Padding(
       padding: const EdgeInsets.only(top: 20),
@@ -551,10 +502,9 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
         tag: "take_picture_for_category",
         child: CustomContainer(
           onTap: () {
-            missionProvider2.clearAllMissions().then((value) {
-              Navigator.pop(context);
-            });
-            /*  Navigator.of(context).push(
+            missionProvider2.clearAllMissions();
+
+            /*Navigator.of(context).push(
               MaterialPageRoute(
                 builder:
                     (_) => TakePictureMainScreen(
@@ -634,6 +584,10 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
     bool donePromo,
     bool productdone,
   ) {
+    final loginProvider = context.read<LoginProvider>();
+    final missionProvider = Provider.of<MissionUpload2Provider>(context);
+    final userId = loginProvider.user!.userId ?? 0;
+    final mission = missionProvider.getMission(widget.customerId, userId);
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -668,10 +622,22 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
                         index: int.parse(kpiId ?? ""),
                         item: kpi,
                         customerId: widget.customerId,
-                        listProducts: matchingChannel!.productMustItems,
-                        listPlace: matchingChannel!.placeMustItems,
-                        listPrice: matchingChannel!.priceMustItems,
-                        listPromo: matchingChannel!.promoMustItems,
+                        listProducts:
+                            mission!.product.isNotEmpty
+                                ? mission.product
+                                : matchingChannel!.productMustItems,
+                        listPlace:
+                            mission.place.isNotEmpty
+                                ? mission.place
+                                : matchingChannel!.placeMustItems,
+                        listPrice:
+                            mission.price.isNotEmpty
+                                ? mission.price
+                                : matchingChannel!.priceMustItems,
+                        listPromo:
+                            mission.promo.isNotEmpty
+                                ? mission.promo
+                                : matchingChannel!.promoMustItems,
                       ),
                 ),
               ),

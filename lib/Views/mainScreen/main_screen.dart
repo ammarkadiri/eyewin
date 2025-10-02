@@ -259,38 +259,49 @@ class _CustomerList extends StatelessWidget {
 
         final customersWithCluster = provider.customersWithCluster;
 
-        if (customersWithCluster.isEmpty) {
-          return const Center(child: Text('No channel data found.'));
-        }
-
         return RefreshIndicator(
           onRefresh: () => _refreshData(context),
-          child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
-            itemCount: customersWithCluster.length,
-            itemBuilder: (context, index) {
-              final data = customersWithCluster[index];
+          child:
+              customersWithCluster.isEmpty
+                  ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 100),
+                      Center(
+                        child: Text(
+                          'No channel data found.\nPull down to refresh.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      ),
+                    ],
+                  )
+                  : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: customersWithCluster.length,
+                    itemBuilder: (context, index) {
+                      final data = customersWithCluster[index];
 
-              return CustomerItemWidget(
-                customer: data['customer'],
-                clustName: data['cluster'],
-                productFrequency: data['productFrequency'],
-                priceFrequency: data['priceFrequency'],
-                placeFrequency: data['placeFrequency'],
-                promoFrequency: data['promoFrequency'],
-                productMustItem: data['ProductMustItems'],
-                priceMustItem: data['PriceMustItems'],
-                placeMustItem: data['PlaceMustItems'],
-                promoMustItem: data['PromoMustItems'],
-                channelId: data['channelId'],
-                isImageMandatory: data['isImageMandatory'] ?? false,
-                showPlace: data['showPlace'],
-                showPrice: data['showPrice'],
-                showProduct: data['showProduct'],
-                showPromo: data['showPromo'],
-              );
-            },
-          ),
+                      return CustomerItemWidget(
+                        customer: data['customer'],
+                        clustName: data['cluster'],
+                        productFrequency: data['productFrequency'],
+                        priceFrequency: data['priceFrequency'],
+                        placeFrequency: data['placeFrequency'],
+                        promoFrequency: data['promoFrequency'],
+                        productMustItem: data['ProductMustItems'],
+                        priceMustItem: data['PriceMustItems'],
+                        placeMustItem: data['PlaceMustItems'],
+                        promoMustItem: data['PromoMustItems'],
+                        channelId: data['channelId'],
+                        isImageMandatory: data['isImageMandatory'] ?? false,
+                        showPlace: data['showPlace'],
+                        showPrice: data['showPrice'],
+                        showProduct: data['showProduct'],
+                        showPromo: data['showPromo'],
+                      );
+                    },
+                  ),
         );
       },
     );
