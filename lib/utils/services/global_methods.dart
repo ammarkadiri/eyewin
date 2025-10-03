@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_salesman_module/generated/l10n.dart';
 import 'package:flutter_salesman_module/models/channel_data_model.dart';
 import 'package:flutter_salesman_module/models/customer_model.dart';
@@ -18,6 +19,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class GlobalMethods {
+  static int imageQuality = 50;
+  static int imageMaxWidth = 1280; //1280
+  static int imagemMaxHeight = 720; //720
   static String getLocale() {
     final String defaultLocale = Platform.localeName;
     String localeDevice = "";
@@ -33,6 +37,28 @@ class GlobalMethods {
     }
     return localeDevice;
     // return "ar";
+  }
+
+  static Future<XFile?> compressImage(File file) async {
+    try {
+      final targetPath =
+          "${file.parent.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg";
+
+      final result = await FlutterImageCompress.compressAndGetFile(
+        file.absolute.path,
+        targetPath,
+        quality: imageQuality,
+        minWidth: imageMaxWidth,
+        minHeight: imagemMaxHeight,
+      );
+
+      if (result == null) return null;
+
+      return XFile(result.path);
+    } catch (e) {
+      print("❌ Error compressing image: $e");
+      return null;
+    }
   }
 
   static Future<void> checkBatteryLevel(BuildContext context) async {

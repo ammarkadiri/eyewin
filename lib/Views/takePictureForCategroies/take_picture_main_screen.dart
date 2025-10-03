@@ -12,6 +12,7 @@ import 'package:flutter_salesman_module/utils/constants/app_font_family.dart';
 import 'package:flutter_salesman_module/utils/constants/colors.dart';
 import 'package:flutter_salesman_module/utils/provider/login_provider.dart';
 import 'package:flutter_salesman_module/utils/provider/upload2_provider.dart';
+import 'package:flutter_salesman_module/utils/services/global_methods.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -99,7 +100,6 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
     if (pickedFile != null) {
       final user = loginProvider.user;
 
-      // 🔹 If "Not Available" was selected → reset it automatically
       if (missionProvider2.isNotAvailableForCategory(
         customerId: widget.customerId,
         categoryId: categoryId,
@@ -113,6 +113,19 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
           group: group,
         );
       }
+      final originalFile = File(pickedFile.path);
+      final originalSize = await originalFile.length();
+      print(
+        "📸 Original image size: ${(originalSize / 1024).toStringAsFixed(2)} KB",
+      );
+
+      // 🔹 Compress the image before saving
+      final compressedFile = await GlobalMethods.compressImage(originalFile);
+      final compressedXFile = XFile(compressedFile!.path);
+      final compressedSize = await compressedFile.length();
+      print(
+        "✅ Compressed image size: ${(compressedSize / 1024).toStringAsFixed(2)} KB",
+      );
 
       // 🔹 Now add the image
       missionProvider2.addImage(
@@ -120,7 +133,7 @@ class _TakePictureMainScreenState extends State<TakePictureMainScreen> {
         userId: user.userId ?? 0,
         categoryId: categoryId,
         group: group,
-        imagePath: pickedFile,
+        imagePath: compressedXFile,
         dataCollectorUserId: user.userId!,
         itemId: widget.categories![index].categoryId ?? 0,
       );

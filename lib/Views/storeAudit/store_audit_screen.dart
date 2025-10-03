@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_salesman_module/Views/kpiDetails/kpi_details_screen.dart';
 import 'package:flutter_salesman_module/Views/storeAudit/storeAuditWidgets/kpi_container.dart';
 import 'package:flutter_salesman_module/Views/storeAudit/storeAuditWidgets/top_store_widget.dart';
+import 'package:flutter_salesman_module/Views/takePictureForCategroies/take_picture_main_screen.dart';
 import 'package:flutter_salesman_module/api/upload_api.dart';
 import 'package:flutter_salesman_module/components/custom_asset_image.dart';
 import 'package:flutter_salesman_module/components/custom_button.dart';
@@ -502,9 +503,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
         tag: "take_picture_for_category",
         child: CustomContainer(
           onTap: () {
-            missionProvider2.clearAllMissions();
-
-            /*Navigator.of(context).push(
+            Navigator.of(context).push(
               MaterialPageRoute(
                 builder:
                     (_) => TakePictureMainScreen(
@@ -512,7 +511,7 @@ class _StoreAuditScreenState extends State<StoreAuditScreen> {
                       customerId: widget.customerId,
                     ),
               ),
-            );*/
+            );
           },
           height: 70,
           borderRadius: 15,
