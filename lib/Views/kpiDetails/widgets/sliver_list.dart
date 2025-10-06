@@ -298,7 +298,13 @@ class _SliverListWidgetState extends State<SliverListWidget> {
   }
 
   Widget _buildPlaceItems() {
-    final places = widget.placeItem!.whereType<PlaceMustItem>().toList();
+    // final places = widget.placeItem!.whereType<PlaceMustItem>().toList();
+    final places =
+        widget.placeItem!
+            .whereType<PlaceMustItem>()
+            .where((p) => (p.location ?? '').isNotEmpty)
+            .toList();
+
     return _buildGroupedList<PlaceMustItem>(
       elements: places,
       groupBy: (p) => p.location ?? '',
@@ -348,7 +354,12 @@ class _SliverListWidgetState extends State<SliverListWidget> {
   }
 
   Widget _buildPromoItems() {
-    final promos = widget.promoItem!.whereType<PromoMustItem>().toList();
+    //  final promos = widget.promoItem!.whereType<PromoMustItem>().toList();
+    final promos =
+        widget.promoItem!
+            .whereType<PromoMustItem>()
+            .where((p) => (p.name ?? '').isNotEmpty)
+            .toList();
     return _buildGroupedList<PromoMustItem>(
       elements: promos,
       groupBy: (p) => p.name ?? '',

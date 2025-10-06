@@ -62,7 +62,6 @@ class CustomerItemWidget extends StatefulWidget {
 class _CustomerItemWidgetState extends State<CustomerItemWidget> {
   @override
   Widget build(BuildContext context) {
-    
     return GestureDetector(
       onTap: () {
         final dateToCheck = widget.customer?.lastVisitDate;

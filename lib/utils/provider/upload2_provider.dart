@@ -353,7 +353,7 @@ class MissionUpload2Provider extends ChangeNotifier {
       debugPrint("✅ Removed ${notInClusterPlaces.length} places from mission.");
       hasChanged = true;
 
-      // Update showPlace to false if place list is now empty
+      // Update showPlace to false if place list is  empty
       if (updatedPlaces.isEmpty) {
         _missions[key] = _missions[key]!.copyWith(showPlace: false);
         debugPrint("✅ Set showPlace to false - no place items remaining.");
@@ -389,6 +389,7 @@ class MissionUpload2Provider extends ChangeNotifier {
             hasChanged = true;
           }
 
+          updatePlaceScores(customerId: customerId, userId: userId);
           return mp.copyWith(guidelines: updatedGuidelines);
         }).toList();
 
@@ -403,7 +404,6 @@ class MissionUpload2Provider extends ChangeNotifier {
             .toList();
 
     if (notInClusterPromo.isNotEmpty) {
-      debugPrint("⚠️ Promo in mission but not in cluster:");
       for (var p in notInClusterPromo) {
         debugPrint(" - ${p.groupId} | ${p.categoryName}");
       }
@@ -421,14 +421,11 @@ class MissionUpload2Provider extends ChangeNotifier {
       debugPrint("✅ Removed ${notInClusterPromo.length} promos from mission.");
       hasChanged = true;
 
-      // Update showPromo to false if promo list is now empty
+      // Update showPromo to false if promo list is   empty
       if (updatedPromo.isEmpty) {
         _missions[key] = _missions[key]!.copyWith(showPromo: false);
-        debugPrint("✅ Set showPromo to false - no promo items remaining.");
       }
-    } else {
-      debugPrint("✅ All mission promos exist in cluster.");
-    }
+    } else {}
 
     // Guidelines inside each promo
     final updatedPromoWithGuidelines =
@@ -456,6 +453,7 @@ class MissionUpload2Provider extends ChangeNotifier {
             );
             hasChanged = true;
           }
+          updatePromoScores(customerId: customerId, userId: userId);
 
           return mp.copyWith(guidelines: updatedGuidelines);
         }).toList();
